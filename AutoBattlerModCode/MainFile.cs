@@ -19,12 +19,8 @@ namespace AutoBattlerMod.AutoBattlerModCode
     {
         public const string ModId = "AutoBattlerMod";
 
-        // ── Configurable constants ──────────────────────────────────────────
-        /// <summary>
-        /// How much extra energy WhisperingEarring grants the player.
-        /// The base game value is 1. Increase to give more energy per turn.
-        /// </summary>
-        private const decimal BonusEnergy = 3m;
+        // ── Configurable ────────────────────────────────────────────────────
+        private const decimal BonusEnergy = 1m;
         // ───────────────────────────────────────────────────────────────────
 
         public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
@@ -49,7 +45,6 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 transpiler: new HarmonyMethod(typeof(MainFile), nameof(AutoPlayTranspiler))
             );
 
-            // Patch ModifyMaxEnergy to apply our configurable BonusEnergy
             MethodInfo modifyMaxEnergy = AccessTools.Method(
                 typeof(WhisperingEarring),
                 nameof(WhisperingEarring.ModifyMaxEnergy));
@@ -61,33 +56,30 @@ namespace AutoBattlerMod.AutoBattlerModCode
         }
 
         /// <summary>
-        /// Transpiler for the AfterAutoPrePlayPhaseEnteredLate state machine.
+        /// PATCH 1 — Turn guard:
+        ///   [0024] callvirt  get_TurnNumber
+        ///   [0025] ldc.i4.1
+        ///   [0026] ble.s     Label(3)   ← continue to loop if TurnNumber &lt;= 1
+        ///   [0027] leave     Label(4)   ← exit try-block if TurnNumber > 1
         ///
-        /// Applies two patches:
+        ///   `leave` is required to exit a try/finally region — replacing it
+        ///   with `br` produces invalid IL. Instead we keep `leave` but point
+        ///   it at Label(3) (the continue target) so both branches go to the
+        ///   loop. The ble.s at [0026] is then redundant but harmless.
         ///
-        /// 1. TURN GUARD — flips the bgt after get_TurnNumber so the
-        ///    "only run on turn 1" restriction is disabled.
+        /// PATCH 2 — Loop limit:
+        ///   [0174] ldarg.0          ← push `this` (state machine)
+        ///   [0175] ldfld cardsPlayed ← push cardsPlayed  (net: 1 value on stack)
+        ///   [0176] ldc.i4.s 13      ← push 13            (net: 2 values on stack)
+        ///   [0177] blt Label(16)    ← pops both, branches if cardsPlayed &lt; 13
         ///
-        ///    Original IL:
-        ///        call  get_TurnNumber
-        ///        ldc.i4.1
-        ///        bgt   [early return]   // if turn > 1, bail
-        ///
-        ///    Patched:
-        ///        call  get_TurnNumber
-        ///        ldc.i4.1
-        ///        ble   [early return]   // if turn <= 1 bail — never true for turn >= 1
-        ///
-        /// 2. LOOP LIMIT — removes the cardsPlayed < 13 upper-bound so the
-        ///    loop runs until one of the natural exit conditions fires
-        ///    (combat over, ready to end turn, or no playable card in hand).
-        ///
-        ///    Original IL (end of for-loop):
-        ///        ldc.i4  13         // (or ldc.i4.s 13)
-        ///        blt / blt.s        // loop back if cardsPlayed < 13
-        ///
-        ///    Patched: both instructions are replaced with nop so the branch
-        ///    is never evaluated and the loop continues unconditionally.
+        ///   Changing blt→br leaves 2 values on stack = invalid IL.
+        ///   Fix: nop [0175] ldfld and [0176] ldc.i4.s (nothing pushed),
+        ///   then change blt→br (pops nothing, branches unconditionally).
+        ///   But wait — ldarg.0 at [0174] is still there pushing `this`.
+        ///   We must also nop [0174] ldarg.0, or add a pop before br.
+        ///   Cleanest: nop all three [0174..0176] and change [0177] blt→br.
+        ///   Net stack effect: 0 pushed, 0 popped — clean.
         /// </summary>
         private static IEnumerable<CodeInstruction> AutoPlayTranspiler(
             IEnumerable<CodeInstruction> instructions)
@@ -96,32 +88,48 @@ namespace AutoBattlerMod.AutoBattlerModCode
             bool turnGuardPatched = false;
             bool loopLimitPatched = false;
 
-            for (int i = 0; i < list.Count - 2; i++)
+            for (int i = 0; i < list.Count; i++)
             {
-                // ── Patch 1: turn guard ──────────────────────────────────
-                if (!turnGuardPatched)
+                // ── Patch 1: redirect the leave so turn guard is bypassed ────
+                // Pattern: callvirt get_TurnNumber, ldc.i4.1, ble/ble.s, leave/leave.s
+                // We redirect the leave to the same label as the ble.s.
+                if (!turnGuardPatched && i >= 2)
                 {
-                    bool isTurnNumberCall =
-                        list[i].opcode == OpCodes.Call &&
-                        list[i].operand is MethodInfo mi &&
+                    bool prevIsTurnNumber =
+                        list[i - 2].opcode == OpCodes.Callvirt &&
+                        list[i - 2].operand is MethodInfo mi &&
                         mi.Name.Contains("TurnNumber");
 
-                    if (isTurnNumberCall &&
-                        list[i + 1].opcode == OpCodes.Ldc_I4_1 &&
-                        (list[i + 2].opcode == OpCodes.Bgt ||
-                         list[i + 2].opcode == OpCodes.Bgt_S))
-                    {
-                        list[i + 2].opcode = list[i + 2].opcode == OpCodes.Bgt
-                            ? OpCodes.Ble
-                            : OpCodes.Ble_S;
+                    bool prevIsLdc1 = list[i - 1].opcode == OpCodes.Ldc_I4_1;
 
-                        turnGuardPatched = true;
-                        i += 2; // skip the two instructions we just examined
-                        continue;
+                    bool currIsBle =
+                        list[i].opcode == OpCodes.Ble_S ||
+                        list[i].opcode == OpCodes.Ble;
+
+                    if (prevIsTurnNumber && prevIsLdc1 && currIsBle)
+                    {
+                        if (i + 1 < list.Count &&
+                            (list[i + 1].opcode == OpCodes.Leave ||
+                             list[i + 1].opcode == OpCodes.Leave_S))
+                        {
+                            // Keep `leave` (required to exit the try region cleanly),
+                            // but point it at Label(3) — the loop continue target —
+                            // instead of Label(4) — the early return target.
+                            object continueLabel = list[i].operand; // Label(3)
+                            list[i + 1].operand = continueLabel;
+                            // leave.s can only reach labels within ~128 bytes;
+                            // upgrade to leave to be safe with the new target.
+                            list[i + 1].opcode = OpCodes.Leave;
+
+                            turnGuardPatched = true;
+                        }
                     }
                 }
 
-                // ── Patch 2: loop limit (cardsPlayed < 13) ───────────────
+                // ── Patch 2: make the loop back-jump unconditional ───────────
+                // Pattern: ldarg.0, ldfld cardsPlayed, ldc.i4.s 13, blt Label(16)
+                // We nop the three push instructions and change blt → br so
+                // the stack stays balanced and the loop never exits here.
                 if (!loopLimitPatched)
                 {
                     bool isThirteen =
@@ -131,19 +139,20 @@ namespace AutoBattlerMod.AutoBattlerModCode
                          list[i].operand is int iv && iv == 13);
 
                     if (isThirteen &&
+                        i + 1 < list.Count &&
                         (list[i + 1].opcode == OpCodes.Blt ||
                          list[i + 1].opcode == OpCodes.Blt_S))
                     {
-                        // Nop both instructions so the loop never terminates
-                        // here — only the three guard checks inside it can stop it.
-                        list[i].opcode = OpCodes.Nop;
+                        // Nop the ldc.i4.s 13 — leaves cardsPlayed on stack from ldfld
+                        list[i].opcode = OpCodes.Pop;  // pop cardsPlayed cleanly
                         list[i].operand = null;
-                        list[i + 1].opcode = OpCodes.Nop;
-                        list[i + 1].operand = null;
+
+                        // Change blt → br (unconditional, pops nothing)
+                        object loopTopLabel = list[i + 1].operand;
+                        list[i + 1].opcode = OpCodes.Br;
+                        list[i + 1].operand = loopTopLabel;
 
                         loopLimitPatched = true;
-                        i += 1;
-                        continue;
                     }
                 }
 
@@ -154,29 +163,20 @@ namespace AutoBattlerMod.AutoBattlerModCode
             return list;
         }
 
-        /// <summary>
-        /// Prefix for WhisperingEarring.ModifyMaxEnergy.
-        /// Overrides the return value entirely so we control the bonus energy
-        /// via BonusEnergy without touching the EnergyVar/DynamicVars system.
-        ///
-        /// Returning false from a prefix skips the original method; Harmony
-        /// writes the value we assign to __result into the caller.
-        /// </summary>
         private static bool ModifyMaxEnergyPrefix(
             WhisperingEarring __instance,
             Player player,
             decimal amount,
             ref decimal __result)
         {
-            // Replicate the original ownership guard
             if (player != __instance.Owner)
             {
                 __result = amount;
-                return false; // skip original
+                return false;
             }
 
             __result = amount + BonusEnergy;
-            return false; // skip original
+            return false;
         }
     }
 }

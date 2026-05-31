@@ -19,6 +19,14 @@ namespace AutoBattlerMod.AutoBattlerModCode
     {
         public const string ModId = "AutoBattlerMod";
 
+        // ── Configurable constants ──────────────────────────────────────────
+        /// <summary>
+        /// How much extra energy WhisperingEarring grants the player.
+        /// The base game value is 1. Increase to give more energy per turn.
+        /// </summary>
+        private const decimal BonusEnergy = 3m;
+        // ───────────────────────────────────────────────────────────────────
+
         public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
             new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
 
@@ -38,62 +46,137 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
             harmony.Patch(
                 moveNext,
-                transpiler: new HarmonyMethod(typeof(MainFile), nameof(Transpiler))
+                transpiler: new HarmonyMethod(typeof(MainFile), nameof(AutoPlayTranspiler))
+            );
+
+            // Patch ModifyMaxEnergy to apply our configurable BonusEnergy
+            MethodInfo modifyMaxEnergy = AccessTools.Method(
+                typeof(WhisperingEarring),
+                nameof(WhisperingEarring.ModifyMaxEnergy));
+
+            harmony.Patch(
+                modifyMaxEnergy,
+                prefix: new HarmonyMethod(typeof(MainFile), nameof(ModifyMaxEnergyPrefix))
             );
         }
 
         /// <summary>
-        /// Patches the MoveNext state machine to remove the TurnNumber > 1 guard.
+        /// Transpiler for the AfterAutoPrePlayPhaseEnteredLate state machine.
         ///
-        /// The original source has:
-        ///     if (base.Owner.PlayerCombatState.TurnNumber > 1) return;
+        /// Applies two patches:
         ///
-        /// In IL this compiles to roughly:
-        ///     call  get_TurnNumber
-        ///     ldc.i4.1          <-- the literal '1' we must NOT touch
-        ///     bgt   [return]    <-- branch-if-greater: skips body when turn > 1
+        /// 1. TURN GUARD — flips the bgt after get_TurnNumber so the
+        ///    "only run on turn 1" restriction is disabled.
         ///
-        /// We flip the branch opcode (bgt -> ble / bgt.s -> ble.s) so the guard
-        /// reads "if TurnNumber <= 1 return", which is always false for turn >= 1,
-        /// effectively disabling the restriction without touching any other
-        /// Ldc_I4_1 in the method (the loop limit '13', the '== 0' check, etc.).
+        ///    Original IL:
+        ///        call  get_TurnNumber
+        ///        ldc.i4.1
+        ///        bgt   [early return]   // if turn > 1, bail
+        ///
+        ///    Patched:
+        ///        call  get_TurnNumber
+        ///        ldc.i4.1
+        ///        ble   [early return]   // if turn <= 1 bail — never true for turn >= 1
+        ///
+        /// 2. LOOP LIMIT — removes the cardsPlayed < 13 upper-bound so the
+        ///    loop runs until one of the natural exit conditions fires
+        ///    (combat over, ready to end turn, or no playable card in hand).
+        ///
+        ///    Original IL (end of for-loop):
+        ///        ldc.i4  13         // (or ldc.i4.s 13)
+        ///        blt / blt.s        // loop back if cardsPlayed < 13
+        ///
+        ///    Patched: both instructions are replaced with nop so the branch
+        ///    is never evaluated and the loop continues unconditionally.
         /// </summary>
-        private static IEnumerable<CodeInstruction> Transpiler(
+        private static IEnumerable<CodeInstruction> AutoPlayTranspiler(
             IEnumerable<CodeInstruction> instructions)
         {
             var list = instructions.ToList();
+            bool turnGuardPatched = false;
+            bool loopLimitPatched = false;
 
-            // Find the index of the get_TurnNumber call so we can locate
-            // the branch that immediately follows the ldc.i4.1 after it.
             for (int i = 0; i < list.Count - 2; i++)
             {
-                bool isTurnNumberCall =
-                    list[i].opcode == OpCodes.Call &&
-                    list[i].operand is MethodInfo mi &&
-                    mi.Name.Contains("TurnNumber");
-
-                if (!isTurnNumberCall)
-                    continue;
-
-                // Expect:  [i] call get_TurnNumber
-                //          [i+1] ldc.i4.1
-                //          [i+2] bgt / bgt.s  (branch when turn > 1 -> early return)
-                if ((list[i + 1].opcode == OpCodes.Ldc_I4_1) &&
-                    (list[i + 2].opcode == OpCodes.Bgt ||
-                     list[i + 2].opcode == OpCodes.Bgt_S))
+                // ── Patch 1: turn guard ──────────────────────────────────
+                if (!turnGuardPatched)
                 {
-                    // Flip the branch so the condition is never true:
-                    //   bgt  -> ble   (branch when turn <= 1, i.e. turn 0 only — impossible in practice)
-                    //   bgt.s -> ble.s
-                    list[i + 2].opcode = list[i + 2].opcode == OpCodes.Bgt
-                        ? OpCodes.Ble
-                        : OpCodes.Ble_S;
+                    bool isTurnNumberCall =
+                        list[i].opcode == OpCodes.Call &&
+                        list[i].operand is MethodInfo mi &&
+                        mi.Name.Contains("TurnNumber");
 
-                    break;
+                    if (isTurnNumberCall &&
+                        list[i + 1].opcode == OpCodes.Ldc_I4_1 &&
+                        (list[i + 2].opcode == OpCodes.Bgt ||
+                         list[i + 2].opcode == OpCodes.Bgt_S))
+                    {
+                        list[i + 2].opcode = list[i + 2].opcode == OpCodes.Bgt
+                            ? OpCodes.Ble
+                            : OpCodes.Ble_S;
+
+                        turnGuardPatched = true;
+                        i += 2; // skip the two instructions we just examined
+                        continue;
+                    }
                 }
+
+                // ── Patch 2: loop limit (cardsPlayed < 13) ───────────────
+                if (!loopLimitPatched)
+                {
+                    bool isThirteen =
+                        (list[i].opcode == OpCodes.Ldc_I4_S &&
+                         list[i].operand is sbyte sb && sb == 13) ||
+                        (list[i].opcode == OpCodes.Ldc_I4 &&
+                         list[i].operand is int iv && iv == 13);
+
+                    if (isThirteen &&
+                        (list[i + 1].opcode == OpCodes.Blt ||
+                         list[i + 1].opcode == OpCodes.Blt_S))
+                    {
+                        // Nop both instructions so the loop never terminates
+                        // here — only the three guard checks inside it can stop it.
+                        list[i].opcode = OpCodes.Nop;
+                        list[i].operand = null;
+                        list[i + 1].opcode = OpCodes.Nop;
+                        list[i + 1].operand = null;
+
+                        loopLimitPatched = true;
+                        i += 1;
+                        continue;
+                    }
+                }
+
+                if (turnGuardPatched && loopLimitPatched)
+                    break;
             }
 
             return list;
+        }
+
+        /// <summary>
+        /// Prefix for WhisperingEarring.ModifyMaxEnergy.
+        /// Overrides the return value entirely so we control the bonus energy
+        /// via BonusEnergy without touching the EnergyVar/DynamicVars system.
+        ///
+        /// Returning false from a prefix skips the original method; Harmony
+        /// writes the value we assign to __result into the caller.
+        /// </summary>
+        private static bool ModifyMaxEnergyPrefix(
+            WhisperingEarring __instance,
+            Player player,
+            decimal amount,
+            ref decimal __result)
+        {
+            // Replicate the original ownership guard
+            if (player != __instance.Owner)
+            {
+                __result = amount;
+                return false; // skip original
+            }
+
+            __result = amount + BonusEnergy;
+            return false; // skip original
         }
     }
 }

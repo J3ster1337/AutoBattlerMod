@@ -2,10 +2,10 @@
   "id": "AutoBattlerMod",
   "name": "AutoBattlerMod",
   "author": "Jester",
-  "description": "Slay the Spire 2 mod created from a template for use with BaseLib",
+  "description": "None",
   "version": "v1.0.0",
-  "has_pck": true,
+  "has_pck": false,
   "has_dll": true,
-  "dependencies": ["BaseLib"],
+  "dependencies": [],
   "affects_gameplay": true
 }

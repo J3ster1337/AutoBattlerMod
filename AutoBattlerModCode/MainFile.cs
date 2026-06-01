@@ -58,7 +58,8 @@ namespace AutoBattlerMod.AutoBattlerModCode
             HarmonyMethod relicsPostfix = new HarmonyMethod(typeof(MainFile), nameof(StartingRelicsPostfix));
 
             foreach (Type characterType in AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
+                .Where(a => !a.IsDynamic)
+                .SelectMany(SafeGetTypes)
                 .Where(t => !t.IsAbstract && typeof(CharacterModel).IsAssignableFrom(t)))
             {
                 MethodInfo startingRelics = AccessTools.Method(characterType, "get_StartingRelics");
@@ -66,6 +67,22 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
                 harmony.Patch(startingRelics, postfix: relicsPostfix);
                 Log($"Patched StartingRelics for {characterType.Name}");
+            }
+        }
+
+        private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(t => t != null)!;
+            }
+            catch
+            {
+                return Enumerable.Empty<Type>();
             }
         }
 

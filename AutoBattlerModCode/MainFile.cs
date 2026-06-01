@@ -3,10 +3,12 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -18,16 +20,17 @@ namespace AutoBattlerMod.AutoBattlerModCode
     public partial class MainFile : Node
     {
         public const string ModId = "AutoBattlerMod";
+        private const string ConfigFileName = "config.cfg";
+        // Loaded from config.cfg; default matches base game value
+        private static decimal _bonusEnergy = 1m;
 
-        // ── Configurable ────────────────────────────────────────────────────
-        private const decimal BonusEnergy = 1m;
-        // ───────────────────────────────────────────────────────────────────
-
-        public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
-            new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
+        public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
+        private static void Log(string message) => Logger.LogMessage(LogLevel.Info, message, 1);
 
         public static void Initialize()
         {
+            LoadConfig();
+
             Harmony harmony = new Harmony("EditWhisperingEarringTurnLimit");
 
             MethodInfo method = AccessTools.Method(
@@ -35,24 +38,72 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 "AfterAutoPrePlayPhaseEnteredLate",
                 new[] { typeof(PlayerChoiceContext), typeof(Player) });
 
-            Type stateMachine =
-                method.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType;
+            Type stateMachine = method.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType;
 
             MethodInfo moveNext = AccessTools.Method(stateMachine, "MoveNext");
 
-            harmony.Patch(
-                moveNext,
-                transpiler: new HarmonyMethod(typeof(MainFile), nameof(AutoPlayTranspiler))
-            );
+            harmony.Patch(moveNext, transpiler: new HarmonyMethod(typeof(MainFile), nameof(AutoPlayTranspiler)));
 
-            MethodInfo modifyMaxEnergy = AccessTools.Method(
-                typeof(WhisperingEarring),
-                nameof(WhisperingEarring.ModifyMaxEnergy));
+            MethodInfo modifyMaxEnergy = AccessTools.Method(typeof(WhisperingEarring), nameof(WhisperingEarring.ModifyMaxEnergy));
 
-            harmony.Patch(
-                modifyMaxEnergy,
-                prefix: new HarmonyMethod(typeof(MainFile), nameof(ModifyMaxEnergyPrefix))
-            );
+            harmony.Patch(modifyMaxEnergy, prefix: new HarmonyMethod(typeof(MainFile), nameof(ModifyMaxEnergyPrefix)));
+        }
+
+        private static void LoadConfig()
+        {
+            try
+            {
+                string modDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if (string.IsNullOrEmpty(modDir))
+                {
+                    Logger.Log("Could not determine mod directory. Using default BonusEnergy = 1.");
+                    _bonusEnergy = 1m;
+                    return;
+                }
+
+                string configPath = Path.Combine(modDir, ConfigFileName);
+
+                if (!File.Exists(configPath))
+                {
+                    // Write a default config so the user knows the file exists and what to edit
+                    var defaults = new { BonusEnergy = 1.0 };
+                    File.WriteAllText(
+                        configPath,
+                        JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true })
+                    );
+                    _bonusEnergy = 1m;
+                    Logger.Log($"Created default config at {configPath} with BonusEnergy = 1.");
+                    return;
+                }
+
+                string json = File.ReadAllText(configPath);
+                using JsonDocument doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.TryGetProperty("BonusEnergy", out JsonElement value))
+                {
+                    double raw = value.GetDouble();
+                    if (raw < 0)
+                    {
+                        Logger.Log($"Invalid BonusEnergy value ({raw}), must be >= 0. Using default 1.");
+                        _bonusEnergy = 1m;
+                    }
+                    else
+                    {
+                        _bonusEnergy = (decimal)raw;
+                        Logger.Log($"Loaded BonusEnergy = {_bonusEnergy} from config.");
+                    }
+                }
+                else
+                {
+                    Logger.Log("Config missing BonusEnergy field. Using default 1.");
+                    _bonusEnergy = 1m;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Failed to load config: {ex.Message}. Using default BonusEnergy = 1.");
+                _bonusEnergy = 1m;
+            }
         }
 
         /// <summary>
@@ -175,7 +226,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 return false;
             }
 
-            __result = amount + BonusEnergy;
+            __result = amount + _bonusEnergy;
             return false;
         }
     }

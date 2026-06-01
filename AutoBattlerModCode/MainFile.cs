@@ -1,6 +1,11 @@
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,10 +14,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 
 namespace AutoBattlerMod.AutoBattlerModCode
 {
@@ -21,8 +22,8 @@ namespace AutoBattlerMod.AutoBattlerModCode
     {
         public const string ModId = "AutoBattlerMod";
         private const string ConfigFileName = "config.cfg";
-        // Loaded from config.cfg; default matches base game value
         private static decimal _bonusEnergy = 1m;
+        private static bool _addRelicToAllCharacters = true;
 
         public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
         private static void Log(string message) => Logger.LogMessage(LogLevel.Info, message, 1);
@@ -47,6 +48,34 @@ namespace AutoBattlerMod.AutoBattlerModCode
             MethodInfo modifyMaxEnergy = AccessTools.Method(typeof(WhisperingEarring), nameof(WhisperingEarring.ModifyMaxEnergy));
 
             harmony.Patch(modifyMaxEnergy, prefix: new HarmonyMethod(typeof(MainFile), nameof(ModifyMaxEnergyPrefix)));
+
+            if (_addRelicToAllCharacters)
+                PatchStartingRelics(harmony);
+        }
+
+        private static void PatchStartingRelics(Harmony harmony)
+        {
+            HarmonyMethod relicsPostfix = new HarmonyMethod(typeof(MainFile), nameof(StartingRelicsPostfix));
+
+            foreach (Type characterType in AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .Where(t => !t.IsAbstract && typeof(CharacterModel).IsAssignableFrom(t)))
+            {
+                MethodInfo startingRelics = AccessTools.Method(characterType, "get_StartingRelics");
+                if (startingRelics == null) continue;
+
+                harmony.Patch(startingRelics, postfix: relicsPostfix);
+                Log($"Patched StartingRelics for {characterType.Name}");
+            }
+        }
+
+        private static void StartingRelicsPostfix(ref IReadOnlyList<RelicModel> __result)
+        {
+            var list = new List<RelicModel>(__result)
+            {
+                ModelDb.Relic<WhisperingEarring>()
+            };
+            __result = list.AsReadOnly();
         }
 
         private static void LoadConfig()
@@ -56,7 +85,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 string modDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 if (string.IsNullOrEmpty(modDir))
                 {
-                    Logger.Log("Could not determine mod directory. Using default BonusEnergy = 1.");
+                    Log("Could not determine mod directory. Using default BonusEnergy = 1.");
                     _bonusEnergy = 1m;
                     return;
                 }
@@ -66,13 +95,14 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 if (!File.Exists(configPath))
                 {
                     // Write a default config so the user knows the file exists and what to edit
-                    var defaults = new { BonusEnergy = 1.0 };
+                    var defaults = new { BonusEnergy = 1.0, AddRelicToAllCharacters = true };
                     File.WriteAllText(
                         configPath,
                         JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true })
                     );
                     _bonusEnergy = 1m;
-                    Logger.Log($"Created default config at {configPath} with BonusEnergy = 1.");
+                    _addRelicToAllCharacters = true;
+                    Log($"Created default config at {configPath} with BonusEnergy = 1 and AddRelicToAllCharacters = true.");
                     return;
                 }
 
@@ -84,24 +114,35 @@ namespace AutoBattlerMod.AutoBattlerModCode
                     double raw = value.GetDouble();
                     if (raw < 0)
                     {
-                        Logger.Log($"Invalid BonusEnergy value ({raw}), must be >= 0. Using default 1.");
+                        Log($"Invalid BonusEnergy value ({raw}), must be >= 0. Using default 1.");
                         _bonusEnergy = 1m;
                     }
                     else
                     {
                         _bonusEnergy = (decimal)raw;
-                        Logger.Log($"Loaded BonusEnergy = {_bonusEnergy} from config.");
+                        Log($"Loaded BonusEnergy = {_bonusEnergy} from config.");
                     }
                 }
                 else
                 {
-                    Logger.Log("Config missing BonusEnergy field. Using default 1.");
+                    Log("Config missing BonusEnergy field. Using default 1.");
                     _bonusEnergy = 1m;
+                }
+
+                if (doc.RootElement.TryGetProperty("AddRelicToAllCharacters", out JsonElement relicValue))
+                {
+                    _addRelicToAllCharacters = relicValue.GetBoolean();
+                    Log($"Loaded AddRelicToAllCharacters = {_addRelicToAllCharacters} from config.");
+                }
+                else
+                {
+                    Log("Config missing AddRelicToAllCharacters field. Using default true.");
+                    _addRelicToAllCharacters = true;
                 }
             }
             catch (Exception ex)
             {
-                Logger.Log($"Failed to load config: {ex.Message}. Using default BonusEnergy = 1.");
+                Log($"Failed to load config: {ex.Message}. Using default BonusEnergy = 1.");
                 _bonusEnergy = 1m;
             }
         }

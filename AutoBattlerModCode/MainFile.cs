@@ -6,10 +6,6 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -21,25 +17,25 @@ namespace AutoBattlerMod.AutoBattlerModCode
     public partial class MainFile : Node
     {
         public const string ModId = "AutoBattlerMod";
-        private const string ConfigFileName = "config.cfg";
-        private static decimal _bonusEnergy = 1m;
-        private static bool _addRelicToAllCharacters = true;
+        public const string ConfigFileName = "config.cfg";
+        public static decimal BonusEnergy = 1m;
+        public static bool AddRelicToAllCharacters = true;
 
-        public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
+        public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, LogType.Generic);
         private static void Log(string message) => Logger.LogMessage(LogLevel.Info, message, 1);
 
         public static void Initialize()
         {
             LoadConfig();
 
-            Harmony harmony = new Harmony("EditWhisperingEarringTurnLimit");
+            Harmony harmony = new(ModId);
 
             MethodInfo method = AccessTools.Method(
                 typeof(WhisperingEarring),
                 "AfterAutoPrePlayPhaseEnteredLate",
-                new[] { typeof(PlayerChoiceContext), typeof(Player) });
+                [typeof(PlayerChoiceContext), typeof(Player)]);
 
-            Type stateMachine = method.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType;
+            Type? stateMachine = method.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType;
 
             MethodInfo moveNext = AccessTools.Method(stateMachine, "MoveNext");
 
@@ -49,13 +45,13 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
             harmony.Patch(modifyMaxEnergy, prefix: new HarmonyMethod(typeof(MainFile), nameof(ModifyMaxEnergyPrefix)));
 
-            if (_addRelicToAllCharacters)
+            if (AddRelicToAllCharacters)
                 PatchStartingRelics(harmony);
         }
 
         private static void PatchStartingRelics(Harmony harmony)
         {
-            HarmonyMethod relicsPostfix = new HarmonyMethod(typeof(MainFile), nameof(StartingRelicsPostfix));
+            HarmonyMethod relicsPostfix = new(typeof(MainFile), nameof(StartingRelicsPostfix));
 
             foreach (Type characterType in AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic)
@@ -82,28 +78,24 @@ namespace AutoBattlerMod.AutoBattlerModCode
             }
             catch
             {
-                return Enumerable.Empty<Type>();
+                return [];
             }
         }
 
         private static void StartingRelicsPostfix(ref IReadOnlyList<RelicModel> __result)
         {
-            var list = new List<RelicModel>(__result)
-            {
-                ModelDb.Relic<WhisperingEarring>()
-            };
-            __result = list.AsReadOnly();
+            __result = new List<RelicModel>(__result) { ModelDb.Relic<WhisperingEarring>() }.AsReadOnly();
         }
 
         private static void LoadConfig()
         {
             try
             {
-                string modDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string? modDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 if (string.IsNullOrEmpty(modDir))
                 {
                     Log("Could not determine mod directory. Using default BonusEnergy = 1.");
-                    _bonusEnergy = 1m;
+                    BonusEnergy = 1m;
                     return;
                 }
 
@@ -117,8 +109,8 @@ namespace AutoBattlerMod.AutoBattlerModCode
                         configPath,
                         JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true })
                     );
-                    _bonusEnergy = 1m;
-                    _addRelicToAllCharacters = true;
+                    BonusEnergy = 1m;
+                    AddRelicToAllCharacters = true;
                     Log($"Created default config at {configPath} with BonusEnergy = 1 and AddRelicToAllCharacters = true.");
                     return;
                 }
@@ -132,35 +124,35 @@ namespace AutoBattlerMod.AutoBattlerModCode
                     if (raw < 0)
                     {
                         Log($"Invalid BonusEnergy value ({raw}), must be >= 0. Using default 1.");
-                        _bonusEnergy = 1m;
+                        BonusEnergy = 1m;
                     }
                     else
                     {
-                        _bonusEnergy = (decimal)raw;
-                        Log($"Loaded BonusEnergy = {_bonusEnergy} from config.");
+                        BonusEnergy = (decimal)raw;
+                        Log($"Loaded BonusEnergy = {BonusEnergy} from config.");
                     }
                 }
                 else
                 {
                     Log("Config missing BonusEnergy field. Using default 1.");
-                    _bonusEnergy = 1m;
+                    BonusEnergy = 1m;
                 }
 
                 if (doc.RootElement.TryGetProperty("AddRelicToAllCharacters", out JsonElement relicValue))
                 {
-                    _addRelicToAllCharacters = relicValue.GetBoolean();
-                    Log($"Loaded AddRelicToAllCharacters = {_addRelicToAllCharacters} from config.");
+                    AddRelicToAllCharacters = relicValue.GetBoolean();
+                    Log($"Loaded AddRelicToAllCharacters = {AddRelicToAllCharacters} from config.");
                 }
                 else
                 {
                     Log("Config missing AddRelicToAllCharacters field. Using default true.");
-                    _addRelicToAllCharacters = true;
+                    AddRelicToAllCharacters = true;
                 }
             }
             catch (Exception ex)
             {
                 Log($"Failed to load config: {ex.Message}. Using default BonusEnergy = 1.");
-                _bonusEnergy = 1m;
+                BonusEnergy = 1m;
             }
         }
 
@@ -272,19 +264,13 @@ namespace AutoBattlerMod.AutoBattlerModCode
             return list;
         }
 
-        private static bool ModifyMaxEnergyPrefix(
-            WhisperingEarring __instance,
-            Player player,
-            decimal amount,
-            ref decimal __result)
+        private static bool ModifyMaxEnergyPrefix(WhisperingEarring __instance, Player player, decimal amount, ref decimal __result)
         {
-            if (player != __instance.Owner)
-            {
-                __result = amount;
-                return false;
-            }
+            __result = amount;
 
-            __result = amount + _bonusEnergy;
+            if (player == __instance.Owner)
+                __result += BonusEnergy;
+
             return false;
         }
     }

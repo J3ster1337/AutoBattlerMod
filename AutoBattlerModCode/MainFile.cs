@@ -1,5 +1,7 @@
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
@@ -20,6 +22,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
         public const string ConfigFileName = "config.cfg";
         public static decimal BonusEnergy = 1m;
         public static bool AddRelicToAllCharacters = true;
+        public static bool AutoEndTurn = true;
 
         public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, LogType.Generic);
         private static void Log(string message) => Logger.LogMessage(LogLevel.Info, message, 1);
@@ -47,6 +50,9 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
             if (AddRelicToAllCharacters)
                 PatchStartingRelics(harmony);
+
+            if (AutoEndTurn)
+                harmony.Patch(moveNext, postfix: new HarmonyMethod(typeof(MainFile), nameof(AutoPlayPostfix)));
         }
 
         private static void PatchStartingRelics(Harmony harmony)
@@ -104,7 +110,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 if (!File.Exists(configPath))
                 {
                     // Write a default config so the user knows the file exists and what to edit
-                    var defaults = new { BonusEnergy = 1.0, AddRelicToAllCharacters = true };
+                    var defaults = new { BonusEnergy = 1.0, AddRelicToAllCharacters = true, AutoEndTurn = true }; 
                     File.WriteAllText(
                         configPath,
                         JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true })
@@ -148,13 +154,53 @@ namespace AutoBattlerMod.AutoBattlerModCode
                     Log("Config missing AddRelicToAllCharacters field. Using default true.");
                     AddRelicToAllCharacters = true;
                 }
+
+                if (doc.RootElement.TryGetProperty("AutoEndTurn", out JsonElement endTurnValue))
+                {
+                    AutoEndTurn = endTurnValue.GetBoolean();
+                    Log($"Loaded AutoEndTurn = {AutoEndTurn} from config.");
+                }
+                else
+                {
+                    Log("Config missing AutoEndTurn field. Using default true.");
+                    AutoEndTurn = true;
+                }
             }
             catch (Exception ex)
             {
-                Log($"Failed to load config: {ex.Message}. Using default BonusEnergy = 1.");
+                Log($"Failed to load config: {ex.Message}. Using defaults.");
                 BonusEnergy = 1m;
+                AddRelicToAllCharacters = true;
+                AutoEndTurn = true;
             }
         }
+
+        private static void AutoPlayPostfix(object __instance)
+        {
+            FieldInfo stateField = GetField(__instance, "<>1__state");
+            if (stateField == null) return;
+            if ((int)stateField.GetValue(__instance) != -2) return;
+
+            FieldInfo playerField = GetField(__instance, "player");
+            if (playerField == null) return;
+            Player player = playerField.GetValue(__instance) as Player;
+            if (player == null) return;
+
+            FieldInfo thisField = GetField(__instance, "<>4__this");
+            if (thisField == null) return;
+            WhisperingEarring relic = thisField.GetValue(__instance) as WhisperingEarring;
+            if (relic == null) return;
+
+            if (player != relic.Owner) return;
+            if (CombatManager.Instance.IsOverOrEnding) return;
+            if (CombatManager.Instance.IsPlayerReadyToEndTurn(player)) return;
+
+            PlayerCmd.EndTurn(player, canBackOut: false);
+        }
+
+        private static FieldInfo GetField(object instance, string name) =>
+            instance.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                .FirstOrDefault(f => f.Name == name);
 
         /// <summary>
         /// PATCH 1 — Turn guard:

@@ -62,7 +62,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 if (CombatManager.Instance.IsOverOrEnding) return;
 
                 relic.Flash();
-                ICombatState combatState = player.Creature.CombatState;
+                ICombatState combatState = player.Creature.CombatState!;
 
                 // Play all potions first
                 if (Config.AutoUsePotions)
@@ -70,7 +70,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                     foreach (PotionModel potion in player.Potions.Where(p => p.Usage != PotionUsage.Automatic).ToList())
                     {
                         if (CombatManager.Instance.IsOverOrEnding) break;
-                        Creature potionTarget = GetPotionTarget(potion, combatState, player);
+                        Creature? potionTarget = GetPotionTarget(potion, combatState, player);
                         await potion.OnUseWrapper(choiceContext, potionTarget);
                     }
                 }
@@ -85,10 +85,10 @@ namespace AutoBattlerMod.AutoBattlerModCode
                         if (CombatManager.Instance.IsPlayerReadyToEndTurn(player)) break;
 
                         CardPile pile = PileType.Hand.GetPile(relic.Owner);
-                        CardModel card = pile.Cards.FirstOrDefault(c => c.CanPlay());
+                        CardModel? card = pile.Cards.FirstOrDefault(c => c.CanPlay());
                         if (card == null) break;
 
-                        Creature target = GetCardTarget(card, combatState, relic);
+                        Creature? target = GetCardTarget(card, combatState, relic);
                         await card.SpendResources();
                         await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
                         cardsPlayed++;
@@ -109,7 +109,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                         !CombatManager.Instance.IsPlayerReadyToEndTurn(player))
                     {
                         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
-                            new EndPlayerTurnAction(player, player.PlayerCombatState.TurnNumber)
+                            new EndPlayerTurnAction(player, player.PlayerCombatState!.TurnNumber)
                         );
                     }
                 }
@@ -153,10 +153,8 @@ namespace AutoBattlerMod.AutoBattlerModCode
             }
         }
 
-
-
         // reuse of original GetTarget from WhisperingEarring class just to see it
-        private static Creature GetCardTarget(CardModel card, ICombatState combatState, WhisperingEarring relic)
+        private static Creature? GetCardTarget(CardModel card, ICombatState combatState, WhisperingEarring relic)
         {
             Rng combatTargets = relic.Owner.RunState.Rng.CombatTargets;
             return card.TargetType switch
@@ -170,21 +168,21 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
         // TODO: What happens for non single target? What happens with osty potions? what with "self"? make fallback for all enums
         // imitation of original GetTarget from WhisperingEarring class for potion usage
-        private static Creature GetPotionTarget(PotionModel potion, ICombatState combatState, Player player)
+        private static Creature? GetPotionTarget(PotionModel potion, ICombatState combatState, Player player)
         {
             Rng combatTargets = potion.Owner.RunState.Rng.CombatTargets;
             if (!potion.TargetType.IsSingleTarget()) return null;
 
-            Creature target = potion.TargetType switch
+            Creature? target = potion.TargetType switch
             {
-                TargetType.AnyEnemy => player.Creature.CombatState.HittableEnemies.FirstOrDefault(),
+                TargetType.AnyEnemy => player.Creature.CombatState!.HittableEnemies.FirstOrDefault(),
                 TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where(c => c != null && c.IsAlive && c.IsPlayer && c != potion.Owner.Creature)),
                 TargetType.AnyPlayer => player.Creature,
                 _ => player.Creature
             };
 
             if (target != null && !target.CombatId.HasValue)
-                target = player.Creature.CombatState.HittableEnemies
+                target = player.Creature.CombatState!.HittableEnemies
                     .FirstOrDefault(c => c.CombatId.HasValue) ?? player.Creature;
 
             return target;
@@ -216,18 +214,9 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
         private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
         {
-            try
-            {
-                return assembly.GetTypes();
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                return ex.Types.Where(t => t != null)!;
-            }
-            catch
-            {
-                return [];
-            }
+            try { return assembly.GetTypes(); }
+            catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t != null)!; }
+            catch { return []; }
         }
 
         private static void StartingRelicsPostfix(ref IReadOnlyList<RelicModel> __result)

@@ -19,7 +19,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
         public static ModConfig Load(Action<string>? log = null)
         {
             try
-            {   
+            {
                 string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "config.cfg");
 
                 if (!File.Exists(path))
@@ -29,7 +29,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                     return new();
                 }
 
-                ModConfig config = JsonSerializer.Deserialize<ModConfig>(File.ReadAllText(path)) 
+                ModConfig config = JsonSerializer.Deserialize<ModConfig>(File.ReadAllText(path))
                     ?? new ModConfig();
 
                 config.Validate();

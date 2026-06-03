@@ -2,12 +2,17 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Runs;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -23,6 +28,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
         public static decimal BonusEnergy = 1m;
         public static bool AddRelicToAllCharacters = true;
         public static bool AutoEndTurn = true;
+        public static bool AutoUsePotions = true;
 
         public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, LogType.Generic);
         private static void Log(string message) => Logger.LogMessage(LogLevel.Info, message, 1);
@@ -53,6 +59,22 @@ namespace AutoBattlerMod.AutoBattlerModCode
 
             if (AutoEndTurn)
                 harmony.Patch(moveNext, postfix: new HarmonyMethod(typeof(MainFile), nameof(AutoPlayPostfix)));
+
+            if (AutoUsePotions)
+                PatchAutoUsePotions(harmony);
+        }
+
+        private static void PatchAutoUsePotions(Harmony harmony)
+        {
+            MethodInfo afterEarly = AccessTools.Method(
+                typeof(AbstractModel),
+                "AfterAutoPrePlayPhaseEnteredEarly",
+                [typeof(PlayerChoiceContext), typeof(Player)]);
+
+            harmony.Patch(
+                afterEarly,
+                postfix: new HarmonyMethod(typeof(MainFile), nameof(AfterAutoPrePlayPhaseEnteredEarlyPostfix))
+            );
         }
 
         private static void PatchStartingRelics(Harmony harmony)
@@ -110,7 +132,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 if (!File.Exists(configPath))
                 {
                     // Write a default config so the user knows the file exists and what to edit
-                    var defaults = new { BonusEnergy = 1.0, AddRelicToAllCharacters = true, AutoEndTurn = true }; 
+                    var defaults = new { BonusEnergy = 1.0, AddRelicToAllCharacters = true, AutoEndTurn = true, AutoUsePotions = true };
                     File.WriteAllText(
                         configPath,
                         JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true })
@@ -165,6 +187,17 @@ namespace AutoBattlerMod.AutoBattlerModCode
                     Log("Config missing AutoEndTurn field. Using default true.");
                     AutoEndTurn = true;
                 }
+
+                if (doc.RootElement.TryGetProperty("AutoUsePotions", out JsonElement potionsValue))
+                {
+                    AutoUsePotions = potionsValue.GetBoolean();
+                    Log($"Loaded AutoUsePotions = {AutoUsePotions} from config.");
+                }
+                else
+                {
+                    Log("Config missing AutoUsePotions field. Using default true.");
+                    AutoUsePotions = true;
+                }
             }
             catch (Exception ex)
             {
@@ -172,6 +205,7 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 BonusEnergy = 1m;
                 AddRelicToAllCharacters = true;
                 AutoEndTurn = true;
+                AutoUsePotions = true;
             }
         }
 
@@ -308,6 +342,57 @@ namespace AutoBattlerMod.AutoBattlerModCode
             }
 
             return list;
+        }
+
+        private static void AfterAutoPrePlayPhaseEnteredEarlyPostfix(
+            RelicModel __instance,
+            PlayerChoiceContext choiceContext,
+            Player player)
+        {
+            if (__instance is not WhisperingEarring relic) return;
+            if (player != relic.Owner) return;
+            if (CombatManager.Instance.IsOverOrEnding) return;
+
+            var potions = player.Potions.Where(p => p.Usage != PotionUsage.Automatic).ToList();
+            if (!potions.Any()) return;
+
+            ActionExecutor executor = RunManager.Instance.ActionExecutor;
+
+            // Enqueue all potions — they execute sequentially since they share the queue
+            UsePotionAction lastAction = null;
+            foreach (PotionModel potion in potions)
+            {
+                Creature target = GetPotionTarget(potion, player);
+                UsePotionAction action = new UsePotionAction(potion, target, isCombatInProgress: true);
+                RunManager.Instance.ActionQueueSet.EnqueueWithoutSynchronizing(action);
+                lastAction = action;
+            }
+
+            // Pause the executor NOW — potions are queued but cards aren't yet
+            // (AfterAutoPrePlayPhaseEnteredLate hasn't fired). Unpause once the
+            // last potion finishes so cards execute after.
+            executor.Pause();
+            lastAction.AfterFinished += _ => executor.Unpause();
+        }
+
+        private static Creature GetPotionTarget(PotionModel potion, Player player)
+        {
+            if (!potion.TargetType.IsSingleTarget()) return null;
+
+            Creature target = potion.TargetType switch
+            {
+                TargetType.AnyEnemy => player.Creature.CombatState.HittableEnemies.FirstOrDefault(),
+                TargetType.AnyAlly => player.Creature,
+                TargetType.AnyPlayer => player.Creature,
+                _ => player.Creature  // fallback for any other single-target type
+            };
+
+            // Ensure the creature has a combat ID — required by UsePotionAction during combat
+            if (target != null && !target.CombatId.HasValue)
+                target = player.Creature.CombatState.HittableEnemies
+                    .FirstOrDefault(c => c.CombatId.HasValue) ?? player.Creature;
+
+            return target;
         }
 
         private static bool ModifyMaxEnergyPrefix(WhisperingEarring __instance, Player player, decimal amount, ref decimal __result)

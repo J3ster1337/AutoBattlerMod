@@ -6,14 +6,18 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Runs;
 using System.Reflection;
 
 namespace AutoBattlerMod.AutoBattlerModCode
@@ -99,14 +103,57 @@ namespace AutoBattlerMod.AutoBattlerModCode
                 // End turn
                 if (Config.AutoEndTurn)
                 {
+                    TryHidingEndTurnButton();
+
                     if (!CombatManager.Instance.IsOverOrEnding &&
                         !CombatManager.Instance.IsPlayerReadyToEndTurn(player))
                     {
-                        PlayerCmd.EndTurn(player, canBackOut: false);
+                        RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
+                            new EndPlayerTurnAction(player, player.PlayerCombatState.TurnNumber)
+                        );
                     }
                 }
             }
         }
+
+        private static void TryHidingEndTurnButton()
+        {
+            try
+            {
+                NEndTurnButton? button = FindEndTurnButton(NCombatRoom.Instance!.Ui);
+
+                if (button == null)
+                {
+                    Log("TryHidingEndTurnButton: Could not find NEndTurnButton.");
+                    return;
+                }
+
+                button.Hide();
+
+                Log($"TryHidingEndTurnButton: Successfully called Hide() on button at '{button.GetPath()}'.");
+            }
+            catch (Exception ex)
+            {
+                Log($"TryHidingEndTurnButton: Unexpected error: {ex}");
+            }
+
+            static NEndTurnButton? FindEndTurnButton(Node node)
+            {
+                if (node is NEndTurnButton button)
+                    return button;
+
+                foreach (Node child in node.GetChildren())
+                {
+                    NEndTurnButton? found = FindEndTurnButton(child);
+                    if (found != null)
+                        return found;
+                }
+
+                return null;
+            }
+        }
+
+
 
         // reuse of original GetTarget from WhisperingEarring class just to see it
         private static Creature GetCardTarget(CardModel card, ICombatState combatState, WhisperingEarring relic)

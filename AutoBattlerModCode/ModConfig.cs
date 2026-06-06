@@ -8,6 +8,7 @@ public class ModConfig
     public decimal BonusEnergy { get; set; } = 1m;
     public bool AddRelicOnRunStart { get; set; } = true;
     public bool AutoUsePotions { get; set; } = true;
+    public bool AutoPlay { get; set; } = true;
     public bool AutoEndTurn { get; set; } = true;
 
     private void Validate()
@@ -38,7 +39,8 @@ public class ModConfig
                 $"Loaded config: BonusEnergy={config.BonusEnergy}, " +
                 $"AddRelicToAllCharacters={config.AddRelicOnRunStart}, " +
                 $"AutoEndTurn={config.AutoEndTurn}, " +
-                $"AutoUsePotions={config.AutoUsePotions}");
+                $"AutoUsePotions={config.AutoUsePotions}, " +
+                $"AutoPlay={config.AutoPlay}");
 
             return config;
         }

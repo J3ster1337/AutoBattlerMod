@@ -37,7 +37,7 @@ public partial class AutoBattlerMod : Node
             prefix: new HarmonyMethod(typeof(AutoBattlerMod),
             nameof(AfterAutoPrePlayPhaseEnteredLatePrefix)));
 
-        if (Config.AddRelicToAllCharacters)
+        if (Config.AddRelicOnRunStart)
             StartingRelicsPatch.PatchStartingRelics(harmony);
     }
 

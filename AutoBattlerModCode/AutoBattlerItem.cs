@@ -43,7 +43,6 @@ public sealed class AutoBattlerItem : CustomRelicModel
             return;
 
         Flash();
-
         await AutoBattlerMod.TurnPlayer.PlayTurn(choiceContext, player, player.Creature.CombatState!, this);
     }
 }

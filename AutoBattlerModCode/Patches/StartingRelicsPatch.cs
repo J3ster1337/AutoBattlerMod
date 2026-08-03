@@ -22,6 +22,11 @@ public static class StartingRelicsPatch
     private static void PopulateStartingRelicsPostfix(Player __instance)
     {
         if (!ShouldGrantRelic(__instance)) return;
+        if (__instance.Relics.OfType<AutoBattlerItem>().Any())
+        {
+            AutoBattlerMod.Log($"Player {__instance.NetId} already has {nameof(AutoBattlerItem)}, skipping.");
+            return;
+        }
 
         RelicModel relic = ModelDb.Relic<AutoBattlerItem>().ToMutable();
         relic.FloorAddedToDeck = 1;
@@ -57,39 +62,35 @@ public static class StartingRelicsPatch
 
         public static void PatchNetGameTypeCapture(Harmony harmony)
         {
-            harmony.Patch(
-                AccessTools.Constructor(typeof(NetSingleplayerGameService)),
+            harmony.Patch(AccessTools.Constructor(typeof(NetSingleplayerGameService), Type.EmptyTypes),
                 postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureSingleplayer)));
 
-            harmony.Patch(
-                AccessTools.Method(typeof(NetHostGameService), nameof(NetHostGameService.StartENetHost)),
-                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureHost)));
+            harmony.Patch(AccessTools.Method(typeof(NetHostGameService), nameof(NetHostGameService.StartENetHost)),
+                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureHostENet)));
 
-            harmony.Patch(
-                AccessTools.Method(typeof(NetHostGameService), nameof(NetHostGameService.StartSteamHost)),
-                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureHost)));
+            harmony.Patch(AccessTools.Method(typeof(NetHostGameService), nameof(NetHostGameService.StartSteamHost)),
+                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureHostSteam)));
 
-            harmony.Patch(
-                AccessTools.Method(typeof(NetClientGameService), nameof(NetClientGameService.Initialize)),
+            harmony.Patch(AccessTools.Method(typeof(NetClientGameService), nameof(NetClientGameService.Initialize)),
                 postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureClient)));
         }
 
-        private static void CaptureSingleplayer(NetSingleplayerGameService __instance)
-        {
-            LastCapturedNetGameType = NetGameType.Singleplayer;
-            AutoBattlerMod.Log($"NetGameType captured: Singleplayer, NetId={__instance.NetId}"); // should be just 1
-        }
+        private static void CaptureSingleplayer(NetSingleplayerGameService __instance) =>
+            Capture(NetGameType.Singleplayer, __instance.NetId, "Singleplayer"); // should be just 1
 
-        private static void CaptureHost(NetHostGameService __instance)
-        {
-            LastCapturedNetGameType = NetGameType.Host;
-            AutoBattlerMod.Log($"NetGameType captured: Host, NetId={__instance.NetId}");
-        }
+        private static void CaptureHostENet(NetHostGameService __instance) =>
+            Capture(NetGameType.Host, __instance.NetId, "Host (ENet)"); // should be just 1
 
-        private static void CaptureClient(NetClientGameService __instance)
+        private static void CaptureHostSteam(NetHostGameService __instance) =>
+            Capture(NetGameType.Host, __instance.NetId, "Host (Steam)");
+
+        private static void CaptureClient(NetClientGameService __instance) =>
+            Capture(NetGameType.Client, __instance.NetId, $"Client, HostNetId={__instance.HostNetId}");
+
+        private static void Capture(NetGameType type, ulong netId, string label)
         {
-            LastCapturedNetGameType = NetGameType.Client;
-            AutoBattlerMod.Log($"NetGameType captured: Client, NetId={__instance.NetId}, HostNetId={__instance.HostNetId}");
+            LastCapturedNetGameType = type;
+            AutoBattlerMod.Log($"NetGameType captured: {label}, NetId={netId}");
         }
     }
 }

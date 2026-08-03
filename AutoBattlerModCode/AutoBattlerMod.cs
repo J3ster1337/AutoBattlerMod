@@ -4,7 +4,6 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
@@ -44,7 +43,6 @@ public partial class AutoBattlerMod : Node
 
     private static bool AfterAutoPrePlayPhaseEnteredLatePrefix(WhisperingEarring __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
     {
-        if (!LocalContext.IsMe(player)) return true; //__result = Task.CompletedTask; return false; - really nothing instead of default earring playing
         if (!Config.AutoPlay) return true; //__result = Task.CompletedTask; return false;
 
         __result = RunAutoPlay(__instance, choiceContext, player);

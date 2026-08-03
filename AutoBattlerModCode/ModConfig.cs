@@ -6,7 +6,7 @@ namespace AutoBattlerMod.AutoBattlerModCode;
 public class ModConfig
 {
     public decimal BonusEnergy { get; set; } = 1m;
-    public bool AddRelicOnRunStart { get; set; } = true;
+    public bool AddRelicOnRunStartByDefault { get; set; } = true;
     public bool AutoUsePotions { get; set; } = true;
     public bool AutoPlay { get; set; } = true;
     public bool AutoEndTurn { get; set; } = true;
@@ -41,7 +41,7 @@ public class ModConfig
             AutoBattlerMod.Log(
                 $"Loaded config:" +
                 $"{nameof(config.BonusEnergy)}={config.BonusEnergy}, " +
-                $"{nameof(config.AddRelicOnRunStart)}={config.AddRelicOnRunStart}, " +
+                $"{nameof(config.AddRelicOnRunStartByDefault)}={config.AddRelicOnRunStartByDefault}, " +
                 $"{nameof(config.GiveRelicOnlyToNetIds)}=[{string.Join(",", config.GiveRelicOnlyToNetIds)}], " +
                 $"{nameof(config.AutoEndTurn)}={config.AutoEndTurn}, " +
                 $"{nameof(config.AutoUsePotions)}={config.AutoUsePotions}, " +

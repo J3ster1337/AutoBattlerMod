@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Multiplayer;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace AutoBattlerMod.AutoBattlerModCode.Patches;
@@ -34,15 +36,60 @@ public static class StartingRelicsPatch
 
         AutoBattlerMod.Log(
             $"{nameof(ShouldGrantRelic)} check: player NetId={player.NetId}, " +
+            $"captured NetGameType={NetGameTypeTracker.LastCapturedNetGameType}, " +
             $"configured {nameof(AutoBattlerMod.Config.GiveRelicOnlyToNetIds)}=[{string.Join(",", recipients)}]");
 
-        // Empty list = treat as singleplayer/default behavior: everyone gets it
-        if (recipients.Count == 0)
+        if (NetGameTypeTracker.LastCapturedNetGameType == NetGameType.Singleplayer || recipients.Count == 0)
         {
-            AutoBattlerMod.Log($"{nameof(AutoBattlerMod.Config.GiveRelicOnlyToNetIds)} is empty, falling back to {nameof(AutoBattlerMod.Config.AddRelicOnRunStart)}={AutoBattlerMod.Config.AddRelicOnRunStart}");
-            return AutoBattlerMod.Config.AddRelicOnRunStart;
+            AutoBattlerMod.Log($"Singleplayer session detected, or {nameof(AutoBattlerMod.Config.GiveRelicOnlyToNetIds)} is empty, falling back to {nameof(AutoBattlerMod.Config.AddRelicOnRunStartByDefault)}={AutoBattlerMod.Config.AddRelicOnRunStartByDefault}");
+
+            return AutoBattlerMod.Config.AddRelicOnRunStartByDefault;
         }
 
-        return recipients.Contains(player.NetId);
+        bool result = recipients.Contains(player.NetId);
+        AutoBattlerMod.Log($"Multiplayer session, player {player.NetId} {(result ? "IS" : "is NOT")} in recipient list, granting={result}");
+        return result;
+    }
+
+    public static class NetGameTypeTracker
+    {
+        public static NetGameType? LastCapturedNetGameType;
+
+        public static void PatchNetGameTypeCapture(Harmony harmony)
+        {
+            harmony.Patch(
+                AccessTools.Constructor(typeof(NetSingleplayerGameService)),
+                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureSingleplayer)));
+
+            harmony.Patch(
+                AccessTools.Method(typeof(NetHostGameService), nameof(NetHostGameService.StartENetHost)),
+                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureHost)));
+
+            harmony.Patch(
+                AccessTools.Method(typeof(NetHostGameService), nameof(NetHostGameService.StartSteamHost)),
+                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureHost)));
+
+            harmony.Patch(
+                AccessTools.Method(typeof(NetClientGameService), nameof(NetClientGameService.Initialize)),
+                postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureClient)));
+        }
+
+        private static void CaptureSingleplayer(NetSingleplayerGameService __instance)
+        {
+            LastCapturedNetGameType = NetGameType.Singleplayer;
+            AutoBattlerMod.Log($"NetGameType captured: Singleplayer, NetId={__instance.NetId}"); // should be just 1
+        }
+
+        private static void CaptureHost(NetHostGameService __instance)
+        {
+            LastCapturedNetGameType = NetGameType.Host;
+            AutoBattlerMod.Log($"NetGameType captured: Host, NetId={__instance.NetId}");
+        }
+
+        private static void CaptureClient(NetClientGameService __instance)
+        {
+            LastCapturedNetGameType = NetGameType.Client;
+            AutoBattlerMod.Log($"NetGameType captured: Client, NetId={__instance.NetId}, HostNetId={__instance.HostNetId}");
+        }
     }
 }

@@ -19,7 +19,7 @@ public static class StartingRelicsPatch
             nameof(PopulateStartingRelicsPostfix)));
     }
 
-    private static async Task PopulateStartingRelicsPostfix(Player __instance)
+    private static void PopulateStartingRelicsPostfix(Player __instance)
     {
         if (!ShouldGrantRelic(__instance)) return;
 

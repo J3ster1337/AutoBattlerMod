@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace AutoBattlerMod.AutoBattlerModCode.Patches;
@@ -11,31 +10,39 @@ public static class StartingRelicsPatch
     public static void PatchStartingRelics(Harmony harmony)
     {
         harmony.Patch(
-            AccessTools.Method(typeof(RunManager),
-                nameof(RunManager.Launch)),
-                postfix: new HarmonyMethod(
-                typeof(StartingRelicsPatch),
-                nameof(LaunchPostfix)));
+            AccessTools.Method(typeof(Player),
+            "PopulateStartingRelics"),
+            postfix: new HarmonyMethod(
+            typeof(StartingRelicsPatch),
+            nameof(PopulateStartingRelicsPostfix)));
     }
 
-    private static async void LaunchPostfix(RunManager __instance)
+    private static async Task PopulateStartingRelicsPostfix(Player __instance)
     {
-        if (__instance.State == null) return;
+        if (!ShouldGrantRelic(__instance)) return;
 
-        foreach (Player player in __instance.State.Players)
+        RelicModel relic = ModelDb.Relic<AutoBattlerItem>().ToMutable();
+        relic.FloorAddedToDeck = 1;
+        SaveManager.Instance.MarkRelicAsSeen(relic);
+        __instance.AddRelicInternal(relic);
+        AutoBattlerMod.Log($"Added {nameof(AutoBattlerItem)} to player {__instance.NetId}.");
+    }
+
+    private static bool ShouldGrantRelic(Player player)
+    {
+        var recipients = AutoBattlerMod.Config.GiveRelicOnlyToNetIds;
+
+        AutoBattlerMod.Log(
+            $"{nameof(ShouldGrantRelic)} check: player NetId={player.NetId}, " +
+            $"configured {nameof(AutoBattlerMod.Config.GiveRelicOnlyToNetIds)}=[{string.Join(",", recipients)}]");
+
+        // Empty list = treat as singleplayer/default behavior: everyone gets it
+        if (recipients.Count == 0)
         {
-            if (player.Relics.OfType<AutoBattlerItem>().Any())
-            {
-                AutoBattlerMod.Log($"Player {player.NetId} already has AutoBattlerItem, skipping.");
-                continue;
-            }
-
-            RelicModel relic = ModelDb.Relic<AutoBattlerItem>().ToMutable();
-            relic.FloorAddedToDeck = 1;
-            SaveManager.Instance.MarkRelicAsSeen(relic);
-            player.AddRelicInternal(relic);
-            await relic.AfterObtained();
-            AutoBattlerMod.Log($"Added AutoBattlerItem to player {player.NetId}.");
+            AutoBattlerMod.Log($"{nameof(AutoBattlerMod.Config.GiveRelicOnlyToNetIds)} is empty, falling back to {nameof(AutoBattlerMod.Config.AddRelicOnRunStart)}={AutoBattlerMod.Config.AddRelicOnRunStart}");
+            return AutoBattlerMod.Config.AddRelicOnRunStart;
         }
+
+        return recipients.Contains(player.NetId);
     }
 }

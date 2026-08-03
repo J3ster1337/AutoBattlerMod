@@ -10,11 +10,14 @@ public class ModConfig
     public bool AutoUsePotions { get; set; } = true;
     public bool AutoPlay { get; set; } = true;
     public bool AutoEndTurn { get; set; } = true;
+    public List<ulong> GiveRelicOnlyToNetIds { get; set; } = [];
 
     private void Validate()
     {
         if (BonusEnergy < 0)
             BonusEnergy = 1m;
+
+        GiveRelicOnlyToNetIds ??= [];
     }
 
     public static ModConfig Load()
@@ -36,11 +39,13 @@ public class ModConfig
             config.Validate();
 
             AutoBattlerMod.Log(
-                $"Loaded config: BonusEnergy={config.BonusEnergy}, " +
-                $"AddRelicToAllCharacters={config.AddRelicOnRunStart}, " +
-                $"AutoEndTurn={config.AutoEndTurn}, " +
-                $"AutoUsePotions={config.AutoUsePotions}, " +
-                $"AutoPlay={config.AutoPlay}");
+                $"Loaded config:" +
+                $"{nameof(config.BonusEnergy)}={config.BonusEnergy}, " +
+                $"{nameof(config.AddRelicOnRunStart)}={config.AddRelicOnRunStart}, " +
+                $"{nameof(config.GiveRelicOnlyToNetIds)}=[{string.Join(",", config.GiveRelicOnlyToNetIds)}], " +
+                $"{nameof(config.AutoEndTurn)}={config.AutoEndTurn}, " +
+                $"{nameof(config.AutoUsePotions)}={config.AutoUsePotions}, " +
+                $"{nameof(config.AutoPlay)}={config.AutoPlay}");
 
             return config;
         }

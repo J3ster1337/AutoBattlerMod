@@ -28,18 +28,18 @@ public static class TurnEnder
 
             if (button == null)
             {
-                AutoBattlerMod.Log("TryHidingEndTurnButton: Could not find NEndTurnButton.");
+                AutoBattlerMod.Log($"{nameof(TryHidingEndTurnButton)}: Could not find NEndTurnButton.");
                 return;
             }
 
             button.Hide();
 
-            AutoBattlerMod.Log($"TryHidingEndTurnButton: Successfully called Hide() on button at '{button.GetPath()}'.");
+            AutoBattlerMod.Log($"{nameof(TryHidingEndTurnButton)}: Successfully called Hide() on button at '{button.GetPath()}'.");
         }
         catch (Exception ex)
         {
             cachedEndTurnButton = null;
-            AutoBattlerMod.Log($"TryHidingEndTurnButton: Unexpected error: {ex}");
+            AutoBattlerMod.Log($"{nameof(TryHidingEndTurnButton)}: Unexpected error: {ex}");
         }
     }
 

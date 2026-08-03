@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 
@@ -25,18 +24,18 @@ public static class StartingRelicsPatch
 
         foreach (Player player in __instance.State.Players)
         {
-            if (player.Relics.OfType<WhisperingEarring>().Any())
+            if (player.Relics.OfType<AutoBattlerItem>().Any())
             {
-                AutoBattlerMod.Log($"Player {player.NetId} already has WhisperingEarring, skipping.");
+                AutoBattlerMod.Log($"Player {player.NetId} already has AutoBattlerItem, skipping.");
                 continue;
             }
 
-            RelicModel relic = ModelDb.Relic<WhisperingEarring>().ToMutable();
+            RelicModel relic = ModelDb.Relic<AutoBattlerItem>().ToMutable();
             relic.FloorAddedToDeck = 1;
             SaveManager.Instance.MarkRelicAsSeen(relic);
             player.AddRelicInternal(relic);
             await relic.AfterObtained();
-            AutoBattlerMod.Log($"Added WhisperingEarring to player {player.NetId}.");
+            AutoBattlerMod.Log($"Added AutoBattlerItem to player {player.NetId}.");
         }
     }
 }

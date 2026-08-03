@@ -13,7 +13,7 @@ namespace AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
 
 public class DefaultTurnPlayer : ITurnPlayer
 {
-    public async Task<int> PlayTurn(PlayerChoiceContext choiceContext, Player player, ICombatState combatState, WhisperingEarring relic)
+    public async Task PlayTurn(PlayerChoiceContext choiceContext, Player player, ICombatState combatState, RelicModel relic)
     {
         if (AutoBattlerMod.Config.AutoUsePotions)
         {
@@ -25,7 +25,6 @@ public class DefaultTurnPlayer : ITurnPlayer
             }
         }
 
-        int cardsPlayed = 0;
         using (CardSelectCmd.PushSelector(new VakuuCardSelector()))
         {
             while (true)
@@ -40,14 +39,11 @@ public class DefaultTurnPlayer : ITurnPlayer
                 Creature? target = GetCardTarget(card, combatState, relic);
                 await card.SpendResources();
                 await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
-                cardsPlayed++;
             }
         }
 
         if (AutoBattlerMod.Config.AutoEndTurn)
             TurnEnder.EndTurn(player);
-
-        return cardsPlayed;
     }
 
 
@@ -73,7 +69,7 @@ public class DefaultTurnPlayer : ITurnPlayer
     }
 
     // reuse of original GetTarget from WhisperingEarring class just to see it
-    private static Creature? GetCardTarget(CardModel card, ICombatState combatState, WhisperingEarring relic)
+    private static Creature? GetCardTarget(CardModel card, ICombatState combatState, RelicModel relic)
     {
         Rng combatTargets = relic.Owner.RunState.Rng.CombatTargets;
         return card.TargetType switch

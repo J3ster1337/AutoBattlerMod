@@ -19,7 +19,7 @@ public static class TurnEnder
                 new EndPlayerTurnAction(player, player.PlayerCombatState!.TurnNumber));
     }
 
-    public static NEndTurnButton? cachedEndTurnButton;
+    private static NEndTurnButton? cachedEndTurnButton;
     public static void TryHidingEndTurnButton()
     {
         try

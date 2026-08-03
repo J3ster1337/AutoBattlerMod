@@ -2,15 +2,8 @@ using AutoBattlerMod.AutoBattlerModCode.Patches;
 using AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
-using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Nodes.Vfx;
 
 namespace AutoBattlerMod.AutoBattlerModCode;
 
@@ -28,39 +21,7 @@ public partial class AutoBattlerMod : Node
     {
         Harmony harmony = new(ModId);
 
-        MaxEnergyPatch.PatchMaxEnergy(harmony);
-
-        harmony.Patch(
-            AccessTools.Method(typeof(WhisperingEarring),
-            "AfterAutoPrePlayPhaseEnteredLate",
-            [typeof(PlayerChoiceContext), typeof(Player)]),
-            prefix: new HarmonyMethod(typeof(AutoBattlerMod),
-            nameof(AfterAutoPrePlayPhaseEnteredLatePrefix)));
-
         if (Config.AddRelicOnRunStart)
             StartingRelicsPatch.PatchStartingRelics(harmony);
-    }
-
-    private static bool AfterAutoPrePlayPhaseEnteredLatePrefix(WhisperingEarring __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
-    {
-        if (!Config.AutoPlay) return true; //__result = Task.CompletedTask; return false;
-
-        __result = RunAutoPlay(__instance, choiceContext, player);
-        return false;
-
-        static async Task RunAutoPlay(WhisperingEarring relic, PlayerChoiceContext choiceContext, Player player)
-        {
-            if (player != relic.Owner) return;
-            if (CombatManager.Instance.IsOverOrEnding) return;
-
-            relic.Flash();
-
-            int cardsPlayed = await AutoBattlerMod.TurnPlayer.PlayTurn(choiceContext, player, player.Creature.CombatState!, relic);
-
-            LocString line = cardsPlayed >= 13
-                ? new LocString("relics", "WHISPERING_EARRING.warning")
-                : new LocString("relics", "WHISPERING_EARRING.approval");
-            TalkCmd.Play(line, player.Creature, VfxColor.Purple);
-        }
     }
 }

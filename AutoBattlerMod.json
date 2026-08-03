@@ -4,8 +4,14 @@
   "author": "Jester",
   "description": "None",
   "version": "v1.0.0",
-  "has_pck": false,
+  "has_pck": true,
   "has_dll": true,
-  "dependencies": [],
+  "min_game_version": "0.107.1",
+  "dependencies": [
+    {
+      "id": "BaseLib",
+      "min_version": "3.3.8"
+    }
+  ],
   "affects_gameplay": true
 }

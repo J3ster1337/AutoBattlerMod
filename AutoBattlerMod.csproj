@@ -57,6 +57,7 @@
         <None Include="AutoBattlerMod.json" />
         <None Include="project.godot" />
         <None Include="AutoBattlerMod/**" />
+        <Folder Include="AutoBattlerMod\localization\eng\" />
     </ItemGroup>
     
     <Target Name="CheckDependencyPaths">

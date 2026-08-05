@@ -13,7 +13,7 @@ public class DefaultTurnPlayer : ITurnPlayer
 {
     public async Task PlayTurn(PlayerChoiceContext choiceContext, Player player, ICombatState combatState, RelicModel relic)
     {
-        if (AutoBattlerMod.Config.AutoUsePotions)
+        if (AutoBattlerMod.Config.AutoUsePotionsOnTurnStart)
         {
             foreach (PotionModel potion in player.Potions.Where(p => p.Usage != PotionUsage.Automatic).ToList())
             {
@@ -40,7 +40,7 @@ public class DefaultTurnPlayer : ITurnPlayer
             }
         }
 
-        if (AutoBattlerMod.Config.AutoEndTurn)
+        if (AutoBattlerMod.Config.AutoEndTurnWhenNoPlayableCardsLeft)
             TurnEnder.EndTurn(player);
     }
 }

@@ -5,26 +5,26 @@ namespace AutoBattlerMod.AutoBattlerModCode;
 
 public class ModConfig
 {
-    public decimal BonusEnergy { get; set; } = 1m;
+    public decimal RelicGivesXBonusEnergy { get; set; } = 1m;
     public bool AddRelicOnRunStartByDefault { get; set; } = true;
-    public bool AutoUsePotions { get; set; } = true;
-    public bool AutoPlay { get; set; } = true;
-    public bool AutoEndTurn { get; set; } = true;
-    public List<ulong> GiveRelicOnlyToTheseSteam64Ids { get; set; } = [];
+    public bool AutoUsePotionsOnTurnStart { get; set; } = true;
+    public bool AutoPlayCards { get; set; } = true;
+    public bool AutoEndTurnWhenNoPlayableCardsLeft { get; set; } = true;
+    public List<ulong> InMultiplayerGiveRelicOnlyToTheseSteam64Ids { get; set; } = [];
 
     private void Validate()
     {
-        if (BonusEnergy < 0)
-            BonusEnergy = 1m;
+        if (RelicGivesXBonusEnergy < 0)
+            RelicGivesXBonusEnergy = 1m;
 
-        GiveRelicOnlyToTheseSteam64Ids ??= [];
+        InMultiplayerGiveRelicOnlyToTheseSteam64Ids ??= [];
     }
 
     public static ModConfig Load()
     {
         try
         {
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "config.cfg");
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "config.txt");
 
             if (!File.Exists(path))
             {
@@ -40,12 +40,12 @@ public class ModConfig
 
             AutoBattlerMod.Log(
                 $"Loaded config:" +
-                $"{nameof(config.BonusEnergy)}={config.BonusEnergy}, " +
+                $"{nameof(config.RelicGivesXBonusEnergy)}={config.RelicGivesXBonusEnergy}, " +
                 $"{nameof(config.AddRelicOnRunStartByDefault)}={config.AddRelicOnRunStartByDefault}, " +
-                $"{nameof(config.GiveRelicOnlyToTheseSteam64Ids)}=[{string.Join(",", config.GiveRelicOnlyToTheseSteam64Ids)}], " +
-                $"{nameof(config.AutoEndTurn)}={config.AutoEndTurn}, " +
-                $"{nameof(config.AutoUsePotions)}={config.AutoUsePotions}, " +
-                $"{nameof(config.AutoPlay)}={config.AutoPlay}");
+                $"{nameof(config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}=[{string.Join(",", config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}], " +
+                $"{nameof(config.AutoEndTurnWhenNoPlayableCardsLeft)}={config.AutoEndTurnWhenNoPlayableCardsLeft}, " +
+                $"{nameof(config.AutoUsePotionsOnTurnStart)}={config.AutoUsePotionsOnTurnStart}, " +
+                $"{nameof(config.AutoPlayCards)}={config.AutoPlayCards}");
 
             return config;
         }

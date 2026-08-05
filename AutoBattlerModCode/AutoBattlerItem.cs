@@ -25,19 +25,19 @@ public sealed class AutoBattlerItem : CustomRelicModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
     [
-        new EnergyVar((int)AutoBattlerMod.Config.BonusEnergy)
+        new EnergyVar((int)AutoBattlerMod.Config.RelicGivesXBonusEnergy)
     ];
 
     public override decimal ModifyMaxEnergy(Player player, decimal amount)
     {
         if (player != Owner) return amount;
-        return amount + AutoBattlerMod.Config.BonusEnergy;
+        return amount + AutoBattlerMod.Config.RelicGivesXBonusEnergy;
     }
 
     public override async Task AfterAutoPrePlayPhaseEnteredLate(
         PlayerChoiceContext choiceContext, Player player)
     {
-        if (AutoBattlerMod.Config.AutoPlay == false
+        if (AutoBattlerMod.Config.AutoPlayCards == false
            || player != Owner
            || CombatManager.Instance.IsOverOrEnding == true)
             return;

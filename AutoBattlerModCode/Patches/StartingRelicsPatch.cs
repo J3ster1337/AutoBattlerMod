@@ -52,13 +52,16 @@ public static class StartingRelicsPatch
         {
             not NetGameType.Singleplayer when recipients.Count == 0 => true,
             not NetGameType.Singleplayer => recipients.Contains(player.NetId),
-            _ => true,
+            _ => true, // NetGameType is singleplayer or null
         };
     }
 
     public static class NetGameTypeTracker
     {
-        public static NetGameType? LastCapturedNetGameType;
+        public static NetGameType? LastCapturedNetGameType
+        {
+            get; private set { field = value; AutoBattlerMod.Log($"NetGameType captured: {value}"); }
+        }
 
         public static void PatchNetGameTypeCapture(Harmony harmony)
         {
@@ -75,22 +78,12 @@ public static class StartingRelicsPatch
                 postfix: new HarmonyMethod(typeof(NetGameTypeTracker), nameof(CaptureClient)));
         }
 
-        private static void CaptureSingleplayer(NetSingleplayerGameService __instance) =>
-            Capture(NetGameType.Singleplayer, __instance.NetId, "Singleplayer"); // should be just 1
+        private static void CaptureSingleplayer(NetSingleplayerGameService __instance) => LastCapturedNetGameType = NetGameType.Singleplayer;
 
-        private static void CaptureHostENet(NetHostGameService __instance) =>
-            Capture(NetGameType.Host, __instance.NetId, "Host (ENet)"); // should be just 1
+        private static void CaptureHostENet(NetHostGameService __instance) => LastCapturedNetGameType = NetGameType.Host;
 
-        private static void CaptureHostSteam(NetHostGameService __instance) =>
-            Capture(NetGameType.Host, __instance.NetId, "Host (Steam)");
+        private static void CaptureHostSteam(NetHostGameService __instance) => LastCapturedNetGameType = NetGameType.Host;
 
-        private static void CaptureClient(NetClientGameService __instance) =>
-            Capture(NetGameType.Client, __instance.NetId, $"Client, HostNetId={__instance.HostNetId}");
-
-        private static void Capture(NetGameType type, ulong netId, string label)
-        {
-            LastCapturedNetGameType = type;
-            AutoBattlerMod.Log($"NetGameType captured: {label}, NetId={netId}");
-        }
+        private static void CaptureClient(NetClientGameService __instance) => LastCapturedNetGameType = NetGameType.Client;
     }
 }

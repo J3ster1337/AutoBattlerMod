@@ -10,7 +10,7 @@ namespace AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
 public static class CustomTargeting
 {
     // TODO: What happens for non single target? What happens with osty potions? what with "self"? make fallback for all enums. what happens with trader potion? make a separate check to not use Foul Potion!!
-    // Imitation of original GetTarget from WhisperingEarring class for potion usage
+    // Imitation of original GetTarget from WhisperingEarring class for potion usage. ENTHROPIC BREW-GENERATED potions are not played until next turn! Bug!
     public static Creature? GetPotionTarget(PotionModel potion, ICombatState combatState, Player player)
     {
         Rng combatTargets = potion.Owner.RunState.Rng.CombatTargets;

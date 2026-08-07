@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Multiplayer;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
-using MegaCrit.Sts2.Core.Saves;
 
 namespace AutoBattlerMod.AutoBattlerModCode.Patches;
 
@@ -21,17 +20,12 @@ public static class StartingRelicsPatch
 
     private static void PopulateStartingRelicsPostfix(Player __instance)
     {
-        if (!ShouldGrantRelic(__instance)) return;
-        if (__instance.Relics.OfType<AutoBattlerItem>().Any())
-        {
-            AutoBattlerMod.Log($"Player {__instance.NetId} already has {nameof(AutoBattlerItem)}, skipping.");
-            return;
-        }
+        if (ShouldGrantRelic(__instance) == false || __instance.Relics.OfType<AutoBattlerItem>().Any()) { return; }
 
         RelicModel relic = ModelDb.Relic<AutoBattlerItem>().ToMutable();
         relic.FloorAddedToDeck = 1;
-        SaveManager.Instance.MarkRelicAsSeen(relic);
         __instance.AddRelicInternal(relic);
+
         AutoBattlerMod.Log($"Added {nameof(AutoBattlerItem)} to player {__instance.NetId}.");
     }
 
@@ -58,10 +52,7 @@ public static class StartingRelicsPatch
 
     public static class NetGameTypeTracker
     {
-        public static NetGameType? LastCapturedNetGameType
-        {
-            get; private set { field = value; AutoBattlerMod.Log($"NetGameType captured: {value}"); }
-        }
+        public static NetGameType? LastCapturedNetGameType { get; private set { field = value; AutoBattlerMod.Log($"NetGameType captured: {value}"); } }
 
         public static void PatchNetGameTypeCapture(Harmony harmony)
         {
@@ -79,11 +70,8 @@ public static class StartingRelicsPatch
         }
 
         private static void CaptureSingleplayer(NetSingleplayerGameService __instance) => LastCapturedNetGameType = NetGameType.Singleplayer;
-
         private static void CaptureHostENet(NetHostGameService __instance) => LastCapturedNetGameType = NetGameType.Host;
-
         private static void CaptureHostSteam(NetHostGameService __instance) => LastCapturedNetGameType = NetGameType.Host;
-
         private static void CaptureClient(NetClientGameService __instance) => LastCapturedNetGameType = NetGameType.Client;
     }
 }

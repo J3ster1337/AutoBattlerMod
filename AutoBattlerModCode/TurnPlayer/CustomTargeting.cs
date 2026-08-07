@@ -9,25 +9,33 @@ namespace AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
 
 public static class CustomTargeting
 {
-    // TODO: What happens for non single target? What happens with osty potions? what with "self"? make fallback for all enums. what happens with trader potion? make a separate check to not use Foul Potion!!
-    // Imitation of original GetTarget from WhisperingEarring class for potion usage. ENTHROPIC BREW-GENERATED potions are not played until next turn! Bug!
+    // TODO: What happens for non single target?
     public static Creature? GetPotionTarget(PotionModel potion, ICombatState combatState, Player player)
     {
-        Rng combatTargets = potion.Owner.RunState.Rng.CombatTargets;
-        if (!potion.TargetType.IsSingleTarget()) return null;
+        if (potion.TargetType.IsSingleTarget() == false) return null;
 
-        Creature? target = potion.TargetType switch
+        switch (potion.TargetType)
         {
-            TargetType.AnyEnemy => player.Creature.CombatState!.HittableEnemies.FirstOrDefault(),
-            TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where(c => c != null && c.IsAlive && c.IsPlayer && c != potion.Owner.Creature)),
-            TargetType.AnyPlayer => player.Creature,
-            _ => player.Creature
-        };
+            case TargetType.AnyEnemy:
+                {
+                    Creature? target = combatState.HittableEnemies.FirstOrDefault();
+                    if (target != null && !target.CombatId.HasValue)
+                        target = combatState.HittableEnemies.FirstOrDefault(c => c.CombatId.HasValue);
+                    return target;
+                }
 
-        if (target != null && !target.CombatId.HasValue)
-            target = player.Creature.CombatState!.HittableEnemies.FirstOrDefault(c => c.CombatId.HasValue) ?? player.Creature;
+            case TargetType.AnyAlly:
+                return potion.Owner.RunState.Rng.CombatTargets
+                    .NextItem(combatState.Allies.Where(c => c != null && c.IsAlive && c.IsPlayer && c != potion.Owner.Creature));
 
-        return target;
+            case TargetType.AnyPlayer:
+            case TargetType.Self:
+                return player.Creature;
+
+            case TargetType.TargetedNoCreature:
+            default:
+                return null;
+        }
     }
 
     // for now, just a copy of original GetTarget from WhisperingEarring class

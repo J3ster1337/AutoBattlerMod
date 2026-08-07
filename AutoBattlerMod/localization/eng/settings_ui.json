@@ -1,0 +1,26 @@
+{
+  "AUTOBATTLERMOD.mod_title": "Auto Battler",
+
+  "AUTOBATTLERMOD-RELIC.title": "Relic",
+  "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.title": "Bonus Energy Granted",
+  "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.hover.desc": "How much bonus Energy the Auto Battler relic grants at the start of each turn.",
+
+  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START_BY_DEFAULT.title": "Grant Relic at Run Start",
+  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START_BY_DEFAULT.hover.desc": "If enabled, every new run starts with the Auto Battler relic.",
+
+  "AUTOBATTLERMOD-AUTOMATION.title": "Automation",
+
+  "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.title": "Auto Use Potions",
+  "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.hover.desc": "Automatically uses available potions at the start of your turn when appropriate. Does not use Foul Potion.",
+
+  "AUTOBATTLERMOD-AUTO_PLAY_CARDS.title": "Auto Play Cards",
+  "AUTOBATTLERMOD-AUTO_PLAY_CARDS.hover.desc": "Automatically plays cards according to the Auto Battler logic.",
+
+  "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.title": "Auto End Turn",
+  "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.hover.desc": "Ends your turn automatically once no playable cards remain.",
+
+  "AUTOBATTLERMOD-MULTIPLAYER.title": "Multiplayer",
+
+  "AUTOBATTLERMOD-IN_MULTIPLAYER_GIVE_RELIC_ONLY_TO_THESE_STEAM64_IDS.title": "SteamID64 Whitelist",
+  "AUTOBATTLERMOD-IN_MULTIPLAYER_GIVE_RELIC_ONLY_TO_THESE_STEAM64_IDS.hover.desc": "Comma-separated Steam64 IDs that should receive the Auto Battler relic in multiplayer. Leave empty to grant the relic to all players. You can check your SteamID64 here - steamid.io. EXAMPLE VALUE: 76561197960287930, 76561197998177443 - this will give relic only to these two players. ALL PLAYERS IN LOBBY SHOULD HAVE SAME SETTINGS, NOT ONLY HOST!"
+}

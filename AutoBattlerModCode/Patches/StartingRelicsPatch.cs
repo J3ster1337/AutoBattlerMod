@@ -37,18 +37,18 @@ public static class StartingRelicsPatch
 
     private static bool ShouldGrantRelic(Player player)
     {
-        var recipients = AutoBattlerMod.Config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids;
+        var recipients = ModConfig.MultiplayerRecipientIds;
 
         AutoBattlerMod.Log(
             $"{nameof(ShouldGrantRelic)} check: player NetId={player.NetId}, " +
             $"captured NetGameType={NetGameTypeTracker.LastCapturedNetGameType}, " +
-            $"configured {nameof(AutoBattlerMod.Config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}=[{string.Join(",", recipients)}]");
+            $"configured {nameof(ModConfig.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}=[{string.Join(",", recipients)}]");
 
         if (NetGameTypeTracker.LastCapturedNetGameType == NetGameType.Singleplayer || recipients.Count == 0)
         {
-            AutoBattlerMod.Log($"Singleplayer session detected, or {nameof(AutoBattlerMod.Config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)} is empty, falling back to {nameof(AutoBattlerMod.Config.AddRelicOnRunStartByDefault)}={AutoBattlerMod.Config.AddRelicOnRunStartByDefault}");
+            AutoBattlerMod.Log($"Singleplayer session detected, or {nameof(ModConfig.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)} is empty, falling back to {nameof(ModConfig.AddRelicOnRunStartByDefault)}={ModConfig.AddRelicOnRunStartByDefault}");
 
-            return AutoBattlerMod.Config.AddRelicOnRunStartByDefault;
+            return ModConfig.AddRelicOnRunStartByDefault;
         }
 
         bool result = recipients.Contains(player.NetId);

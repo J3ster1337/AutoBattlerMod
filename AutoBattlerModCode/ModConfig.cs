@@ -1,58 +1,41 @@
-﻿using System.Reflection;
-using System.Text.Json;
+﻿using BaseLib.Config;
+using System.Globalization;
 
 namespace AutoBattlerMod.AutoBattlerModCode;
 
-public class ModConfig
+public sealed class ModConfig : SimpleModConfig
 {
-    public decimal RelicGivesXBonusEnergy { get; set; } = 1m;
-    public bool AddRelicOnRunStartByDefault { get; set; } = true;
-    public bool AutoUsePotionsOnTurnStart { get; set; } = true;
-    public bool AutoPlayCards { get; set; } = true;
-    public bool AutoEndTurnWhenNoPlayableCardsLeft { get; set; } = true;
-    public List<ulong> InMultiplayerGiveRelicOnlyToTheseSteam64Ids { get; set; } = [];
+    [ConfigSection("Relic")]
+    [ConfigSlider(0, 10, 1)]
+    [ConfigHoverTip]
+    public static double RelicGivesXBonusEnergy { get; set; } = 1;
 
-    private void Validate()
-    {
-        if (RelicGivesXBonusEnergy < 0)
-            RelicGivesXBonusEnergy = 1m;
+    [ConfigHoverTip]
+    public static bool AddRelicOnRunStartByDefault { get; set; } = true;
 
-        InMultiplayerGiveRelicOnlyToTheseSteam64Ids ??= [];
-    }
+    [ConfigSection("Automation")]
+    [ConfigHoverTip]
+    public static bool AutoUsePotionsOnTurnStart { get; set; } = true;
 
-    public static ModConfig Load()
-    {
-        try
-        {
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "config.txt");
+    [ConfigHoverTip]
+    public static bool AutoPlayCards { get; set; } = true;
 
-            if (!File.Exists(path))
-            {
-                File.WriteAllText(path, JsonSerializer.Serialize(new ModConfig(), new JsonSerializerOptions { WriteIndented = true }));
-                AutoBattlerMod.Log($"Created default config: {path}");
-                return new();
-            }
+    [ConfigHoverTip]
+    public static bool AutoEndTurnWhenNoPlayableCardsLeft { get; set; } = true;
 
-            ModConfig config = JsonSerializer.Deserialize<ModConfig>(File.ReadAllText(path))
-                ?? new ModConfig();
+    [ConfigSection("Multiplayer")]
+    [ConfigTextInput]
+    [ConfigHoverTip]
+    public static string InMultiplayerGiveRelicOnlyToTheseSteam64Ids { get; set; } = "";
 
-            config.Validate();
-
-            AutoBattlerMod.Log(
-                $"Loaded config:" +
-                $"{nameof(config.RelicGivesXBonusEnergy)}={config.RelicGivesXBonusEnergy}, " +
-                $"{nameof(config.AddRelicOnRunStartByDefault)}={config.AddRelicOnRunStartByDefault}, " +
-                $"{nameof(config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}=[{string.Join(",", config.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}], " +
-                $"{nameof(config.AutoEndTurnWhenNoPlayableCardsLeft)}={config.AutoEndTurnWhenNoPlayableCardsLeft}, " +
-                $"{nameof(config.AutoUsePotionsOnTurnStart)}={config.AutoUsePotionsOnTurnStart}, " +
-                $"{nameof(config.AutoPlayCards)}={config.AutoPlayCards}");
-
-            return config;
-        }
-        catch (Exception ex)
-        {
-            AutoBattlerMod.Log($"Failed to load config: {ex.Message}");
-            return new ModConfig();
-        }
-    }
+    [ConfigIgnore]
+    public static HashSet<ulong> MultiplayerRecipientIds =>
+        InMultiplayerGiveRelicOnlyToTheseSteam64Ids
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => ulong.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out ulong id)
+                ? id
+                : (ulong?)null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToHashSet();
 }

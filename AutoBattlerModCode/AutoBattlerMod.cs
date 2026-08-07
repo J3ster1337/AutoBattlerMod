@@ -1,5 +1,6 @@
 using AutoBattlerMod.AutoBattlerModCode.Patches;
 using AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
+using BaseLib.Config;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
@@ -11,7 +12,6 @@ namespace AutoBattlerMod.AutoBattlerModCode;
 public partial class AutoBattlerMod : Node
 {
     public const string ModId = "AutoBattlerMod";
-    public static ModConfig Config = ModConfig.Load();
 
     public static void Log(string message) => new MegaCrit.Sts2.Core.Logging.Logger(ModId, LogType.Generic).LogMessage(LogLevel.Info, message, 1);
 
@@ -20,8 +20,9 @@ public partial class AutoBattlerMod : Node
     public static void Initialize()
     {
         Harmony harmony = new(ModId);
+        ModConfigRegistry.Register(ModId, new ModConfig());
 
-        if (Config.AddRelicOnRunStartByDefault)
+        if (ModConfig.AddRelicOnRunStartByDefault)
             StartingRelicsPatch.PatchStartingRelics(harmony);
 
         StartingRelicsPatch.NetGameTypeTracker.PatchNetGameTypeCapture(harmony);

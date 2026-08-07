@@ -24,8 +24,6 @@ public class DefaultTurnPlayer : ITurnPlayer
                 if (potion == null) break;
 
                 Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);
-                if (potionTarget == null) break;
-
                 await potion.OnUseWrapper(choiceContext, potionTarget);
             }
         }

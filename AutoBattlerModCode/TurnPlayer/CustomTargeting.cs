@@ -9,10 +9,9 @@ namespace AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
 
 public static class CustomTargeting
 {
-    // TODO: What happens for non single target?
     public static Creature? GetPotionTarget(PotionModel potion, ICombatState combatState, Player player)
     {
-        if (potion.TargetType.IsSingleTarget() == false) return null;
+        if (potion.TargetType.IsSingleTarget() == false) return null; // explosion ampule validly returns null here, cause it does not use target variable
 
         switch (potion.TargetType)
         {

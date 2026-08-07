@@ -42,18 +42,36 @@ public static class StartingRelicsPatch
         AutoBattlerMod.Log(
             $"{nameof(ShouldGrantRelic)} check: player NetId={player.NetId}, " +
             $"captured NetGameType={NetGameTypeTracker.LastCapturedNetGameType}, " +
-            $"configured {nameof(ModConfig.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)}=[{string.Join(",", recipients)}]");
+            $"configured {nameof(ModConfig.Steam64IdsMultiplayerFilter)}=[{string.Join(",", recipients)}], " +
+            $"{nameof(ModConfig.AddRelicOnRunStart)}={ModConfig.AddRelicOnRunStart}");
 
-        if (NetGameTypeTracker.LastCapturedNetGameType == NetGameType.Singleplayer || recipients.Count == 0)
+        if (ModConfig.AddRelicOnRunStart == false) // disabled
         {
-            AutoBattlerMod.Log($"Singleplayer session detected, or {nameof(ModConfig.InMultiplayerGiveRelicOnlyToTheseSteam64Ids)} is empty, falling back to {nameof(ModConfig.AddRelicOnRunStartByDefault)}={ModConfig.AddRelicOnRunStartByDefault}");
-
-            return ModConfig.AddRelicOnRunStartByDefault;
+            AutoBattlerMod.Log("Starting relic disabled globally, not adding");
+            return false;
         }
-
-        bool result = recipients.Contains(player.NetId);
-        AutoBattlerMod.Log($"Multiplayer session, player {player.NetId} {(result ? "IS" : "is NOT")} in recipient list, granting={result}");
-        return result;
+        else // enabled
+        {
+            if (NetGameTypeTracker.LastCapturedNetGameType == NetGameType.Singleplayer) // singleplayer
+            {
+                AutoBattlerMod.Log("Singleplayer session, adding");
+                return true;
+            }
+            else // multiplayer
+            {
+                if (recipients.Count == 0) // no filter
+                {
+                    AutoBattlerMod.Log("Multiplayer session with empty recipient list, granting=true for everyone");
+                    return true;
+                }
+                else // filter
+                {
+                    bool result = recipients.Contains(player.NetId);
+                    AutoBattlerMod.Log($"Multiplayer session, player {player.NetId} {(result ? "IS" : "is NOT")} in recipient list, granting={result}");
+                    return result;
+                }
+            }
+        }
     }
 
     public static class NetGameTypeTracker

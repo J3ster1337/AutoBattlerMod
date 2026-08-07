@@ -23,15 +23,22 @@ public sealed class AutoBattlerItem : CustomRelicModel
         HoverTipFactory.ForEnergy(this)
     ];
 
-    protected override IEnumerable<DynamicVar> CanonicalVars =>
+    protected override IEnumerable<DynamicVar> CanonicalVars => // can this be removed???
     [
-        new EnergyVar((int)ModConfig.RelicGivesXBonusEnergy)
+        new EnergyVar((int)ModConfig.RelicGivesXBonusEnergy),
+        new CardsVar((int)ModConfig.RelicGivesXBonusDraw)
     ];
 
     public override decimal ModifyMaxEnergy(Player player, decimal amount)
     {
         if (player != Owner) return amount;
         return amount + (decimal)ModConfig.RelicGivesXBonusEnergy;
+    }
+
+    public override decimal ModifyHandDraw(Player player, decimal count)
+    {
+        if (player != base.Owner) return count;
+        return count + (int)ModConfig.RelicGivesXBonusDraw;
     }
 
     public override async Task AfterAutoPrePlayPhaseEnteredLate(

@@ -2,11 +2,14 @@
   "AUTOBATTLERMOD.mod_title": "Auto Battler",
 
   "AUTOBATTLERMOD-RELIC.title": "Relic",
+  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START.title": "Grant Relic at Run Start",
+  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START.hover.desc": "If enabled, every new run starts with the Auto Battler relic. No, there is no any other way to obtain it, it just allows you to turn the mod off.",
+
   "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.title": "Bonus Energy Granted",
   "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.hover.desc": "How much bonus Energy the Auto Battler relic grants at the start of each turn.",
 
-  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START_BY_DEFAULT.title": "Grant Relic at Run Start",
-  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START_BY_DEFAULT.hover.desc": "If enabled, every new run starts with the Auto Battler relic.",
+  "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_DRAW.title": "Bonus Draw Granted",
+  "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_DRAW.hover.desc": "How many additional cards the Auto Battler relic allows you to draw at the start of each turn.",
 
   "AUTOBATTLERMOD-AUTOMATION.title": "Automation",
 
@@ -21,6 +24,6 @@
 
   "AUTOBATTLERMOD-MULTIPLAYER.title": "Multiplayer",
 
-  "AUTOBATTLERMOD-IN_MULTIPLAYER_GIVE_RELIC_ONLY_TO_THESE_STEAM64_IDS.title": "SteamID64 Whitelist",
-  "AUTOBATTLERMOD-IN_MULTIPLAYER_GIVE_RELIC_ONLY_TO_THESE_STEAM64_IDS.hover.desc": "Comma-separated Steam64 IDs that should receive the Auto Battler relic in multiplayer. Leave empty to grant the relic to all players. You can check your SteamID64 here - steamid.io. EXAMPLE VALUE: 76561197960287930, 76561197998177443 - this will give relic only to these two players. ALL PLAYERS IN LOBBY SHOULD HAVE SAME SETTINGS, NOT ONLY HOST!"
+  "AUTOBATTLERMOD-STEAM64_IDS_MULTIPLAYER_FILTER.title": "SteamID64 Filter",
+  "AUTOBATTLERMOD-STEAM64_IDS_MULTIPLAYER_FILTER.hover.desc": "Comma-separated Steam64 IDs of players who should receive the Auto Battler relic in multiplayer. Leave empty to grant the relic to all players. You can check your SteamID64 here - steamid.io. EXAMPLE VALUE: 76561197960287930, 76561197998177443 - this will give relic only to these two players. ALL PLAYERS IN LOBBY SHOULD HAVE SAME SETTINGS, NOT ONLY HOST!"
 }

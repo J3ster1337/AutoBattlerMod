@@ -39,7 +39,7 @@ public static class TurnEnder
         catch (Exception ex)
         {
             cachedEndTurnButton = null;
-            AutoBattlerMod.Log($"{nameof(TryHidingEndTurnButton)}: Unexpected error: {ex}");
+            AutoBattlerMod.Log($"{nameof(TryHidingEndTurnButton)}: Unexpected error hiding NEndTurnButton: {ex}");
         }
     }
 
@@ -49,7 +49,7 @@ public static class TurnEnder
             return cachedEndTurnButton;
 
         cachedEndTurnButton = FindEndTurnButton(NCombatRoom.Instance!.Ui);
-        AutoBattlerMod.Log($"Cached EndTurnButton at '{cachedEndTurnButton?.GetPath()}'.");
+        AutoBattlerMod.Log($"Cached NEndTurnButton at '{cachedEndTurnButton?.GetPath()}'.");
         return cachedEndTurnButton;
     }
 

@@ -22,9 +22,6 @@ public partial class AutoBattlerMod : Node
         Harmony harmony = new(ModId);
         ModConfigRegistry.Register(ModId, new ModConfig());
 
-        if (ModConfig.AddRelicOnRunStart)
-            StartingRelicsPatch.PatchStartingRelics(harmony);
-
-        StartingRelicsPatch.NetGameTypeTracker.PatchNetGameTypeCapture(harmony);
+        StartingRelicsPatch.PatchStartingRelics(harmony);
     }
 }

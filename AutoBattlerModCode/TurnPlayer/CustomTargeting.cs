@@ -38,7 +38,7 @@ public static class CustomTargeting
         }
     }
 
-    // for now, just a copy of original GetTarget from WhisperingEarring class
+    // Just a copy of original GetTarget from WhisperingEarring class
     public static Creature? GetCardTarget(CardModel card, ICombatState combatState, RelicModel relic)
     {
         Rng combatTargets = relic.Owner.RunState.Rng.CombatTargets;

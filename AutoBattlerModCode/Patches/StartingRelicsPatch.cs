@@ -10,12 +10,10 @@ public static class StartingRelicsPatch
 {
     public static void PatchStartingRelics(Harmony harmony)
     {
-        harmony.Patch(
-            AccessTools.Method(typeof(Player),
-            "PopulateStartingRelics"),
-            postfix: new HarmonyMethod(
-            typeof(StartingRelicsPatch),
-            nameof(PopulateStartingRelicsPostfix)));
+        harmony.Patch(AccessTools.Method(typeof(Player), "PopulateStartingRelics"),
+            postfix: new HarmonyMethod(typeof(StartingRelicsPatch), nameof(PopulateStartingRelicsPostfix)));
+
+        NetGameTypeTracker.PatchNetGameTypeCapture(harmony);
     }
 
     private static void PopulateStartingRelicsPostfix(Player __instance)

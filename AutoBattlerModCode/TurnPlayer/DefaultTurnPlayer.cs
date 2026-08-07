@@ -16,19 +16,19 @@ public class DefaultTurnPlayer : ITurnPlayer
     {
         if (ModConfig.AutoUsePotionsOnTurnStart)
         {
-			while (true)
-			{
-				if (CombatManager.Instance.IsOverOrEnding) break;
+            while (true)
+            {
+                if (CombatManager.Instance.IsOverOrEnding) break;
 
-				PotionModel? potion = player.Potions.FirstOrDefault(p => p.Usage != PotionUsage.Automatic && p is not FoulPotion);
-				if (potion == null) break;
+                PotionModel? potion = player.Potions.FirstOrDefault(p => p.Usage != PotionUsage.Automatic && p is not FoulPotion);
+                if (potion == null) break;
 
-				Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);
-				if (potionTarget == null) break;
+                Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);
+                if (potionTarget == null) break;
 
-				await potion.OnUseWrapper(choiceContext, potionTarget);
-			}
-		}
+                await potion.OnUseWrapper(choiceContext, potionTarget);
+            }
+        }
 
         using (CardSelectCmd.PushSelector(new CustomCardSelector()))
         {
@@ -43,7 +43,7 @@ public class DefaultTurnPlayer : ITurnPlayer
                 Creature? target = CustomTargeting.GetCardTarget(card, combatState, relic);
                 await card.SpendResources();
                 await CardCmd.AutoPlay(choiceContext, card, target, skipXCapture: true); // bool skipCardPileVisuals = false is default
-			}
+            }
         }
 
         if (ModConfig.AutoEndTurnWhenNoPlayableCardsLeft)

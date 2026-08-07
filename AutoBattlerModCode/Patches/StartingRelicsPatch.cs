@@ -45,33 +45,15 @@ public static class StartingRelicsPatch
             $"configured {nameof(ModConfig.Steam64IdsMultiplayerFilter)}=[{string.Join(",", recipients)}], " +
             $"{nameof(ModConfig.AddRelicOnRunStart)}={ModConfig.AddRelicOnRunStart}");
 
-        if (ModConfig.AddRelicOnRunStart == false) // disabled
-        {
-            AutoBattlerMod.Log("Starting relic disabled globally, not adding");
+        if (ModConfig.AddRelicOnRunStart == false)
             return false;
-        }
-        else // enabled
+
+        return NetGameTypeTracker.LastCapturedNetGameType switch
         {
-            if (NetGameTypeTracker.LastCapturedNetGameType == NetGameType.Singleplayer) // singleplayer
-            {
-                AutoBattlerMod.Log("Singleplayer session, adding");
-                return true;
-            }
-            else // multiplayer
-            {
-                if (recipients.Count == 0) // no filter
-                {
-                    AutoBattlerMod.Log("Multiplayer session with empty recipient list, granting=true for everyone");
-                    return true;
-                }
-                else // filter
-                {
-                    bool result = recipients.Contains(player.NetId);
-                    AutoBattlerMod.Log($"Multiplayer session, player {player.NetId} {(result ? "IS" : "is NOT")} in recipient list, granting={result}");
-                    return result;
-                }
-            }
-        }
+            not NetGameType.Singleplayer when recipients.Count == 0 => true,
+            not NetGameType.Singleplayer => recipients.Contains(player.NetId),
+            _ => true,
+        };
     }
 
     public static class NetGameTypeTracker

@@ -23,7 +23,7 @@ public sealed class AutoBattlerItem : CustomRelicModel
         HoverTipFactory.ForEnergy(this)
     ];
 
-    protected override IEnumerable<DynamicVar> CanonicalVars => // can this be removed???
+    protected override IEnumerable<DynamicVar> CanonicalVars =>
     [
         new EnergyVar((int)ModConfig.RelicGivesXBonusEnergy),
         new CardsVar((int)ModConfig.RelicGivesXBonusDraw)

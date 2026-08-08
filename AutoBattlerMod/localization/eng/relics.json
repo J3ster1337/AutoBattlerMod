@@ -1,5 +1,5 @@
 {
   "AUTOBATTLERMOD-AUTO_BATTLER_ITEM.title": "Auto Battler",
-  "AUTOBATTLERMOD-AUTO_BATTLER_ITEM.description": "",
+  "AUTOBATTLERMOD-AUTO_BATTLER_ITEM.description": "{Energy:cond:>0?Gain {Energy:energyIcons()}{Cards:cond:>0? and draw [blue]{Cards}[/blue] additional {Cards:cond:>1?cards|card}|} at the start of each turn. |{Cards:cond:>0?Draw [blue]{Cards}[/blue] additional {Cards:cond:>1?cards|card} at the start of each turn. |}}Automatically play your hand.",
   "AUTOBATTLERMOD-AUTO_BATTLER_ITEM.flavor": "We do what must be done."
 }

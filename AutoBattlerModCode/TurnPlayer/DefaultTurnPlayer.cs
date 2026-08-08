@@ -16,7 +16,9 @@ public class DefaultTurnPlayer : ITurnPlayer
     {
         if (ModConfig.AutoUsePotionsOnTurnStart)
         {
-            while (true)
+            int potionsUsed = 0;
+
+			while (true)
             {
                 if (CombatManager.Instance.IsOverOrEnding) break;
 
@@ -25,7 +27,10 @@ public class DefaultTurnPlayer : ITurnPlayer
 
                 Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);
                 await potion.OnUseWrapper(choiceContext, potionTarget);
-            }
+
+                potionsUsed++;
+                if (ModConfig.MaxPotionsPerTurn != 0 && potionsUsed >= ModConfig.MaxPotionsPerTurn) break;
+			}
         }
 
         using (CardSelectCmd.PushSelector(new CustomCardSelector()))

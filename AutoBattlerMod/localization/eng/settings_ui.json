@@ -16,6 +16,9 @@
   "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.title": "Auto Use Potions",
   "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.hover.desc": "Automatically uses available potions at the start of your turn when appropriate. Does not use Foul Potion.",
 
+  "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.title": "Max Potions Per Turn",
+  "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.hover.desc": "The maximum number of potions that can be used automatically per turn. Set to 0 for no limit.",
+
   "AUTOBATTLERMOD-AUTO_PLAY_CARDS.title": "Auto Play Cards",
   "AUTOBATTLERMOD-AUTO_PLAY_CARDS.hover.desc": "Automatically plays cards according to the Auto Battler logic.",
 

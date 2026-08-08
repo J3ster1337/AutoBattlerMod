@@ -22,6 +22,10 @@ public sealed class ModConfig : SimpleModConfig
     [ConfigHoverTip]
     public static bool AutoUsePotionsOnTurnStart { get; set; } = true;
 
+    [ConfigSlider(0, 3, 1)]
+    [ConfigHoverTip]
+    public static double MaxPotionsPerTurn { get; set; } = 1;
+
     [ConfigHoverTip]
     public static bool AutoPlayCards { get; set; } = true;
 

@@ -14,9 +14,9 @@ namespace AutoBattlerMod.AutoBattlerModCode;
 public sealed class AutoBattlerItem : CustomRelicModel
 {
     public override RelicRarity Rarity => RelicRarity.Ancient;
-    public override string PackedIconPath => "res://AutoBattlerMod/images/relics/auto_battler_item.png";
-    protected override string PackedIconOutlinePath => "res://AutoBattlerMod/images/relics/auto_battler_item_outline.png";
-    protected override string BigIconPath => "res://AutoBattlerMod/images/relics/auto_battler_item_large.png";
+    public override string PackedIconPath => "res://AutoBattlerMod/auto_battler_item.png";
+    protected override string BigIconPath => PackedIconPath;
+    protected override string PackedIconOutlinePath => PackedIconPath;
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
     [
@@ -49,7 +49,6 @@ public sealed class AutoBattlerItem : CustomRelicModel
            || CombatManager.Instance.IsOverOrEnding == true)
             return;
 
-        Flash();
         await AutoBattlerMod.TurnPlayer.PlayTurn(choiceContext, player, player.Creature.CombatState!, this);
     }
 }

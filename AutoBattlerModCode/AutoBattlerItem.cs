@@ -30,7 +30,8 @@ public sealed class AutoBattlerItem : CustomRelicModel
         new DynamicVar("PotionAutoplay", ModConfig.PotionsAutoPlay ? 1 : 0),
         new DynamicVar("MaxPotionsPerTurn", (int)ModConfig.MaxPotionsPerTurn),
         new DynamicVar("CardsAutoPlay", ModConfig.CardsAutoPlay ? 1 : 0),
-        new DynamicVar("AutoEndTurn", ModConfig.AutoEndTurnWhenNoPlayableCardsLeft ? 1 : 0)
+        new DynamicVar("AutoEndTurn", ModConfig.AutoEndTurnWhenNoPlayableCardsLeft ? 1 : 0),
+        new DynamicVar("HasAnyEffect", (ModConfig.RelicGivesXBonusEnergy > 0 || ModConfig.RelicGivesXBonusDraw > 0 || ModConfig.CardsAutoPlay || ModConfig.PotionsAutoPlay) ? 1 : 0)
     ];
 
     public override decimal ModifyMaxEnergy(Player player, decimal amount)

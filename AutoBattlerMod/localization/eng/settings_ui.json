@@ -15,14 +15,14 @@
   "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.title": "Auto Use Potions",
   "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.hover.desc": "Automatically uses available potions at the start of your turn. Does not use Foul Potion or Fairy in a Bottle.",
 
-  "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.title": "Max Potions Per Turn",
+  "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.title": "Max Potions Used Per Turn",
   "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.hover.desc": "The maximum number of potions that can be used automatically per turn. Set to 0 for no limit.",
 
   "AUTOBATTLERMOD-AUTO_PLAY_CARDS.title": "Auto Play Cards",
-  "AUTOBATTLERMOD-AUTO_PLAY_CARDS.hover.desc": "Automatically plays cards, similarly to Whispering Earring.",
+  "AUTOBATTLERMOD-AUTO_PLAY_CARDS.hover.desc": "Automatically plays all cards, similarly to Whispering Earring.",
 
   "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.title": "Auto End Turn",
-  "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.hover.desc": "Ends your turn automatically once no playable cards remain.",
+  "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.hover.desc": "Ends your turn automatically once no playable cards remain. Only works when Auto Play Cards is enabled.",
 
   "AUTOBATTLERMOD-MULTIPLAYER.title": "Multiplayer",
 

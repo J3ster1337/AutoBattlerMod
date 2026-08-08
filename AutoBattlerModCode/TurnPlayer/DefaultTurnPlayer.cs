@@ -14,7 +14,7 @@ public class DefaultTurnPlayer : ITurnPlayer
 {
     public async Task PlayTurn(PlayerChoiceContext choiceContext, Player player, ICombatState combatState, RelicModel relic)
     {
-        if (ModConfig.AutoUsePotionsOnTurnStart)
+        if (ModConfig.PotionsAutoPlay)
         {
             int potionsUsed = 0;
 

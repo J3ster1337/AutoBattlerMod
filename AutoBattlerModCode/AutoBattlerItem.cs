@@ -26,7 +26,11 @@ public sealed class AutoBattlerItem : CustomRelicModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
     [
         new EnergyVar((int)ModConfig.RelicGivesXBonusEnergy),
-        new CardsVar((int)ModConfig.RelicGivesXBonusDraw)
+        new CardsVar((int)ModConfig.RelicGivesXBonusDraw),
+        new DynamicVar("PotionAutoplay", ModConfig.PotionsAutoPlay ? 1 : 0),
+        new DynamicVar("MaxPotionsPerTurn", (int)ModConfig.MaxPotionsPerTurn),
+        new DynamicVar("CardsAutoPlay", ModConfig.CardsAutoPlay ? 1 : 0),
+        new DynamicVar("AutoEndTurn", ModConfig.AutoEndTurnWhenNoPlayableCardsLeft ? 1 : 0)
     ];
 
     public override decimal ModifyMaxEnergy(Player player, decimal amount)
@@ -44,7 +48,7 @@ public sealed class AutoBattlerItem : CustomRelicModel
     public override async Task AfterAutoPrePlayPhaseEnteredLate(
         PlayerChoiceContext choiceContext, Player player)
     {
-        if (ModConfig.AutoPlayCards == false
+        if (ModConfig.CardsAutoPlay == false
            || player != Owner
            || CombatManager.Instance.IsOverOrEnding == true)
             return;

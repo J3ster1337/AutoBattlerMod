@@ -20,14 +20,14 @@ public sealed class ModConfig : SimpleModConfig
 
     [ConfigSection("Automation")]
     [ConfigHoverTip]
-    public static bool AutoUsePotionsOnTurnStart { get; set; } = true;
+    public static bool PotionsAutoPlay { get; set; } = true;
 
     [ConfigSlider(0, 3, 1)]
     [ConfigHoverTip]
     public static double MaxPotionsPerTurn { get; set; } = 1;
 
     [ConfigHoverTip]
-    public static bool AutoPlayCards { get; set; } = true;
+    public static bool CardsAutoPlay { get; set; } = true;
 
     [ConfigHoverTip]
     public static bool AutoEndTurnWhenNoPlayableCardsLeft { get; set; } = true;

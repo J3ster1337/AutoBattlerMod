@@ -2,25 +2,24 @@
   "AUTOBATTLERMOD.mod_title": "Auto Battler",
 
   "AUTOBATTLERMOD-RELIC.title": "Relic",
-  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START.title": "Grant Relic at Run Start",
+  "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START.title": "Add Auto Battler Relic at Run Start",
   "AUTOBATTLERMOD-ADD_RELIC_ON_RUN_START.hover.desc": "If enabled, every new run starts with the Auto Battler relic. No, there is no any other way to obtain it, it just allows you to turn the mod off.",
 
   "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.title": "Bonus Energy Granted",
-  "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.hover.desc": "How much bonus Energy the Auto Battler relic grants at the start of each turn.",
+  "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_ENERGY.hover.desc": "How much bonus Energy the Auto Battler relic gives at the start of each turn.",
 
   "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_DRAW.title": "Bonus Draw Granted",
   "AUTOBATTLERMOD-RELIC_GIVES_X_BONUS_DRAW.hover.desc": "How many additional cards the Auto Battler relic allows you to draw at the start of each turn.",
 
   "AUTOBATTLERMOD-AUTOMATION.title": "Automation",
-
   "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.title": "Auto Use Potions",
-  "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.hover.desc": "Automatically uses available potions at the start of your turn when appropriate. Does not use Foul Potion.",
+  "AUTOBATTLERMOD-AUTO_USE_POTIONS_ON_TURN_START.hover.desc": "Automatically uses available potions at the start of your turn. Does not use Foul Potion or Fairy in a Bottle.",
 
   "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.title": "Max Potions Per Turn",
   "AUTOBATTLERMOD-MAX_POTIONS_PER_TURN.hover.desc": "The maximum number of potions that can be used automatically per turn. Set to 0 for no limit.",
 
   "AUTOBATTLERMOD-AUTO_PLAY_CARDS.title": "Auto Play Cards",
-  "AUTOBATTLERMOD-AUTO_PLAY_CARDS.hover.desc": "Automatically plays cards according to the Auto Battler logic.",
+  "AUTOBATTLERMOD-AUTO_PLAY_CARDS.hover.desc": "Automatically plays cards, similarly to Whispering Earring.",
 
   "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.title": "Auto End Turn",
   "AUTOBATTLERMOD-AUTO_END_TURN_WHEN_NO_PLAYABLE_CARDS_LEFT.hover.desc": "Ends your turn automatically once no playable cards remain.",

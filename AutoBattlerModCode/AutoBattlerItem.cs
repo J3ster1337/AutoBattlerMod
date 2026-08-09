@@ -46,13 +46,9 @@ public sealed class AutoBattlerItem : CustomRelicModel
         return count + (int)ModConfig.RelicGivesXBonusDraw;
     }
 
-    public override async Task AfterAutoPrePlayPhaseEnteredLate(
-        PlayerChoiceContext choiceContext, Player player)
+    public override async Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
     {
-        if (ModConfig.CardsAutoPlay == false
-           || player != Owner
-           || CombatManager.Instance.IsOverOrEnding == true)
-            return;
+        if (player != Owner || CombatManager.Instance.IsOverOrEnding == true) return;
 
         await AutoBattlerMod.TurnPlayer.PlayTurn(choiceContext, player, player.Creature.CombatState!, this);
     }

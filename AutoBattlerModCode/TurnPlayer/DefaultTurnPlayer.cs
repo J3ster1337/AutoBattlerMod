@@ -18,38 +18,44 @@ public class DefaultTurnPlayer : ITurnPlayer
         {
             int potionsUsed = 0;
 
-			while (true)
+            using (CardSelectCmd.PushSelector(new CustomCardSelector()))
             {
-                if (CombatManager.Instance.IsOverOrEnding) break;
+                while (true)
+                {
+                    if (CombatManager.Instance.IsOverOrEnding) break;
 
-                PotionModel? potion = player.Potions.FirstOrDefault(p => p.Usage != PotionUsage.Automatic && p is not FoulPotion);
-                if (potion == null) break;
+                    PotionModel? potion = player.Potions.FirstOrDefault(p => p.Usage != PotionUsage.Automatic && p is not FoulPotion);
+                    if (potion == null) break;
 
-                Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);
-                await potion.OnUseWrapper(choiceContext, potionTarget);
+                    Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);
+                    await potion.OnUseWrapper(choiceContext, potionTarget);
 
-                potionsUsed++;
-                if (ModConfig.MaxPotionsPerTurn != 0 && potionsUsed >= ModConfig.MaxPotionsPerTurn) break;
-			}
-        }
-
-        using (CardSelectCmd.PushSelector(new CustomCardSelector()))
-        {
-            while (true)
-            {
-                if (CombatManager.Instance.IsOverOrEnding || CombatManager.Instance.IsPlayerReadyToEndTurn(player)) break;
-
-                CardPile hand = PileType.Hand.GetPile(relic.Owner);
-                CardModel? card = hand.Cards.FirstOrDefault(c => c.CanPlay());
-                if (card == null) break;
-
-                Creature? target = CustomTargeting.GetCardTarget(card, combatState, relic);
-                await card.SpendResources();
-                await CardCmd.AutoPlay(choiceContext, card, target, skipXCapture: true); // bool skipCardPileVisuals = false is default
+                    potionsUsed++;
+                    if (ModConfig.MaxPotionsPerTurn != 0 && potionsUsed >= ModConfig.MaxPotionsPerTurn) break;
+                }
             }
         }
 
-        if (ModConfig.AutoEndTurnWhenNoPlayableCardsLeft)
-            TurnEnder.EndTurn(player);
+        if (ModConfig.CardsAutoPlay)
+        {
+            using (CardSelectCmd.PushSelector(new CustomCardSelector()))
+            {
+                while (true)
+                {
+                    if (CombatManager.Instance.IsOverOrEnding || CombatManager.Instance.IsPlayerReadyToEndTurn(player)) break;
+
+                    CardPile hand = PileType.Hand.GetPile(relic.Owner);
+                    CardModel? card = hand.Cards.FirstOrDefault(c => c.CanPlay());
+                    if (card == null) break;
+
+                    Creature? target = CustomTargeting.GetCardTarget(card, combatState, relic);
+                    await card.SpendResources();
+                    await CardCmd.AutoPlay(choiceContext, card, target, skipXCapture: true);
+                }
+            }
+
+            if (ModConfig.AutoEndTurnWhenNoPlayableCardsLeft)
+                TurnEnder.EndTurn(player);
+        }
     }
 }

@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.TestSupport;
 
 namespace AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
 
-public class CustomCardSelector : ICardSelector // for now, just a copy of VakuuCardSelector
+public class CustomCardSelector : ICardSelector // Just a copy of VakuuCardSelector. Can be used in combat context to force auto-selection of cards, for example when playing potions that require card selection
 {
     public Task<IEnumerable<CardModel>> GetSelectedCards(IEnumerable<CardModel> options, int minSelect, int maxSelect)
     {

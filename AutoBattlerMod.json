@@ -2,7 +2,7 @@
   "id": "AutoBattlerMod",
   "name": "AutoBattlerMod",
   "author": "Jester",
-  "description": "None",
+  "description": "Adds a customizable relic that auto-plays your potions and cards at the start of each turn, with configurable energy/card bonuses. Supports multiplayer.",
   "version": "v1.0.0",
   "has_pck": true,
   "has_dll": true,

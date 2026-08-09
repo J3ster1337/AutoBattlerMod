@@ -14,7 +14,7 @@ namespace AutoBattlerMod.AutoBattlerModCode;
 public sealed class AutoBattlerItem : CustomRelicModel
 {
     public override RelicRarity Rarity => RelicRarity.Ancient;
-    public override string PackedIconPath => "res://AutoBattlerMod/auto_battler_item.png";
+    public override string PackedIconPath => "res://AutoBattlerMod/mod_image.png";
     protected override string BigIconPath => PackedIconPath;
     protected override string PackedIconOutlinePath => PackedIconPath;
 

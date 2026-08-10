@@ -1,4 +1,4 @@
-# Auto Battler — relic that plays your battles for you. Like Whispering Earring, but EVERY TURN.
+# Relic that plays your battles for you. Like Whispering Earring, but EVERY TURN.
 
 ### *Configurable* Automation
 1. Auto Play Cards — automatically plays every card in hand, similar to Whispering Earring.

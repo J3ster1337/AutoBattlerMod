@@ -12,7 +12,7 @@ public sealed class ModConfig : SimpleModConfig
 
     [ConfigSlider(0, 10, 1)]
     [ConfigHoverTip]
-    public static double RelicGivesXBonusEnergy { get; set; } = 1;
+    public static double RelicGivesXBonusEnergy { get; set; } = 2;
 
     [ConfigSlider(0, 10, 1)]
     [ConfigHoverTip]

@@ -3,7 +3,7 @@
 ### *Configurable* Automation
 1. Auto Play Cards — automatically plays every card in hand, similar to Whispering Earring.
 2. Auto End Turn — once no playable cards remain, your turn ends on its own (requires Auto Play Cards).
-3. Auto Use Potions — automatically drinks one or several potions at the start of each turn (skips Foul Potion).
+3. Auto Use Potions — automatically drinks one or several potions at the start of each turn (skips Foul Potion and Ashwater).
 
 ### *Configurable* Bonuses
 1. Bonus Energy — adds 0–10 extra Energy at the start of each turn.

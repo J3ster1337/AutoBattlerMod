@@ -24,7 +24,7 @@ public class DefaultTurnPlayer : ITurnPlayer
                 {
                     if (CombatManager.Instance.IsOverOrEnding) break;
 
-                    PotionModel? potion = player.Potions.FirstOrDefault(p => p.Usage != PotionUsage.Automatic && p is not FoulPotion);
+                    PotionModel? potion = player.Potions.FirstOrDefault(p => p.Usage != PotionUsage.Automatic && p is not FoulPotion && p is not Ashwater);
                     if (potion == null) break;
 
                     Creature? potionTarget = CustomTargeting.GetPotionTarget(potion, combatState, player);

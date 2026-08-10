@@ -16,6 +16,11 @@
         <NoWarn>$(NoWarn);MSB3270</NoWarn> 
     </PropertyGroup>
 
+	<PropertyGroup>
+		<GenerateDependencyFile>false</GenerateDependencyFile>
+		<DebugType>none</DebugType>
+	</PropertyGroup>
+
     <ItemGroup Condition="Exists('$(Sts2DataDir)')">
         <Reference Include="0Harmony">
             <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
@@ -68,7 +73,6 @@
         <Message Text="Copying .dll .pdb and .json to mods folder." Importance="high" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
         <Copy SourceFiles="$(AssemblyName).json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
-        <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
     </Target>
 
     <Target Name="CopyQuickPck" AfterTargets="PackPck" Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
@@ -84,4 +88,14 @@
         <Message Text="Exporting Godot .pck to mods folder" Importance="high" />
         <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;BasicExport&quot; &quot;$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;" EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1" ContinueOnError="WarnAndContinue" />
     </Target>
+
+	<Target Name="CleanModPublishOutput" AfterTargets="Publish">
+		<ItemGroup>
+			<FilesToDelete Include="$(PublishDir)GodotSharp.dll" />
+			<FilesToDelete Include="$(PublishDir)GodotSharpEditor.dll" />
+			<FilesToDelete Include="$(PublishDir)*.deps.json" />
+			<FilesToDelete Include="$(PublishDir)*.pdb" />
+		</ItemGroup>
+		<Delete Files="@(FilesToDelete)" />
+	</Target>
 </Project>

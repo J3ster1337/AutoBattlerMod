@@ -12,3 +12,4 @@ packages/
 Directory.Build.props
 *.uid
 *.import
+Uploader/

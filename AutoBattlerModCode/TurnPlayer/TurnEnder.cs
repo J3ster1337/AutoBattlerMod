@@ -1,9 +1,7 @@
-﻿using Godot;
-using MegaCrit.Sts2.Core.Combat;
+﻿using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace AutoBattlerMod.AutoBattlerModCode.TurnPlayer;
@@ -12,14 +10,16 @@ public static class TurnEnder
 {
     public static void EndTurn(Player player)
     {
-        TryHidingEndTurnButton();
+        if (!LocalContext.IsMe(player)) return; // only the owning client should submit the network action, like NEndTurnButton does
+
+        //TryHidingEndTurnButton(); was required on some older version, i don't care now
 
         if (!CombatManager.Instance.IsOverOrEnding && !CombatManager.Instance.IsPlayerReadyToEndTurn(player))
             RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
                 new EndPlayerTurnAction(player, player.PlayerCombatState!.TurnNumber));
     }
 
-    private static NEndTurnButton? cachedEndTurnButton;
+    /*private static NEndTurnButton? cachedEndTurnButton;
     public static void TryHidingEndTurnButton()
     {
         try
@@ -66,5 +66,5 @@ public static class TurnEnder
         }
 
         return null;
-    }
+    }*/
 }
